@@ -1,0 +1,44 @@
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import Header from './header';
+import Home from './Home';
+import About from './About';
+import Menu from './Menu';
+import Vod from './vod';
+import Linear from './linear';
+import LandingPage from './LandingPage';
+import Specials from './Specials';
+
+function App() {
+  return (
+    <Router>
+      <div className="min-h-screen bg-gray-100 text-gray-900">
+        <Header />
+        <Menu />
+        <div className='p-4'>
+          <Routes>
+            <Route path="/" exact element={<Home/>} />
+            <Route path="/About" element={<About/>} />
+            <Route path="/playback1" element={<Vod input_index = {0}/>} />
+            <Route path="/playback2" element={<Vod input_index = {1}/>} />
+            <Route path="/playback3" element={<Linear input_index = {2}/>} />
+            <Route path="/playback4" element={<Linear input_index = {3}/>} />
+            <Route path="/playback5" element={<Vod input_index = {4}/>} />
+            <Route path="/playback6" element={<Linear input_index = {5}/>} />
+            <Route path="/playback7" element={<Vod input_index = {6}/>} />
+            <Route path="/playback8" element={<Vod input_index = {7}/>} />
+            <Route path="/playback9" element={<Linear input_index = {8}/>} />
+            <Route path="/playback10" element={<Linear input_index = {9}/>} />
+            <Route path="/playback11" element={<Vod input_index = {10}/>} />
+            <Route path="/playback14" element={<Linear input_index = {13}/>} />
+            <Route path="/specials1" element={<Specials input_index = {11} inAdPause = {true} inSequence={'seq1'} inAdOverlay={false} />} />
+            <Route path="/specials2" element={<Specials input_index = {12} inAdPause = {false} inSequence={''} inAdOverlay={true} />} />
+            <Route path="/landing" element={<LandingPage />} />
+          </Routes>
+        </div>
+      </div>
+    </Router>
+  );
+}
+
+export default App;
