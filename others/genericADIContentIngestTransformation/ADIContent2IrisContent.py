@@ -229,8 +229,6 @@ def fetchAndPrepareADIData():
     txtContentID = ''
     txtContentName = ''
     txtContentType = 'VOD'
-    txtProductionYear = ''
-    txtCountryOfOrigin = ''
     objSubtitles = []
     objAudios = []
     objGenres = []
@@ -238,10 +236,12 @@ def fetchAndPrepareADIData():
     objContentAdvisory = []
     objContentCategories = []
     objContentAudiences = []
+    objProductionYear = []
     objActors = []
     objDirectors = []
     objProducers = []
     objStudios = []
+    objCountryOfOrigin = []
     objAwards = []
     objResolutions = []
     objProviders = []
@@ -299,6 +299,8 @@ def fetchAndPrepareADIData():
             for app_data in asset_metadata.findall('App_Data'):
                 name = str(app_data.attrib.get('Name'))
                 value = str(app_data.attrib.get('Value'))
+                #if name in ['Resolution','Languages','Subtitle_Languages','X_DAI_Enabled']:
+                #print(name)
                 # get and parse the content advisories
                 if name == 'Advisories':
                     advisory_id = value.replace(' ','_').upper()
@@ -329,10 +331,11 @@ def fetchAndPrepareADIData():
                             fullContentAudiences.append(audience_id)                
                 # get and parse production year
                 if name == 'Year':
-                    if value != "":
-                        txtProductionYear = value
-                        if txtProductionYear not in fullProductionYears:
-                            fullProductionYears.append(txtProductionYear)
+                    production_id = str(value)
+                    if production_id != "":
+                        objProductionYear.append(production_id)
+                        if production_id not in fullProductionYears:
+                            fullProductionYears.append(production_id)
                 # get and parse actors
                 if name == 'Actors':
                     actor_id = format_person_name(value).upper()
@@ -363,10 +366,11 @@ def fetchAndPrepareADIData():
                             fullStudios.append(studio_id)
                 # get and parse Country of Origin
                 if name == 'Country_of_Origin':
-                    if value != "":
-                        txtCountryOfOrigin = value
-                        if txtCountryOfOrigin not in fullCountryofOrigin:
-                            fullCountryofOrigin.append(txtCountryOfOrigin)         
+                    country_id = value.replace(' ','_').upper()
+                    if country_id != "":
+                        objCountryOfOrigin.append(country_id)
+                        if country_id not in fullCountryofOrigin:
+                            fullCountryofOrigin.append(country_id)         
                 # get and parse Parental Control
                 if name == 'Rating':
                     parental_id = value.replace(' ','_').upper()
@@ -381,35 +385,48 @@ def fetchAndPrepareADIData():
                         objAwards.append(award_id)
                         if award_id not in fullAwards:
                             fullAwards.append(award_id)
-                ###################################################################
-                # Process the Movie ADI section
-                ###################################################################
-                for sub_asset in asset_metadata.findall('Asset'):
-                    for sub_meta in sub_asset.findall('Metadata'):
-                        for sub_app_data in sub_meta.findall('App_Data'):
-                            name = str(sub_app_data.attrib.get('Name'))
-                            value = str(sub_app_data.attrib.get('Value'))                            
-                            # get and parse Audio Languages
-                            if name == 'Languages':
-                                audio_id = value.replace(' ','_').upper()
-                                if audio_id != "":
-                                    objAudios.append(audio_id)
-                                    if audio_id not in fullAudios:
-                                        fullAudios.append(audio_id)
-                            # get and parse Resolution
-                            if name == 'Resolution':
-                                resolution_id = value.replace(' ','_').upper()
-                                if resolution_id != "":
-                                    objResolutions.append(resolution_id)
-                                    if resolution_id not in fullResolutions:
-                                        fullResolutions.append(resolution_id)
-                            # get and parse Subtitles
-                            if name == 'Subtitle_Languages':
-                                subtitle_id = value.replace(' ','_').upper()
-                                if subtitle_id != "":
-                                    objSubtitles.append(subtitle_id)
-                                    if subtitle_id not in fullSubtitles:
-                                        fullSubtitles.append(subtitle_id)
+            ###################################################################
+            # Process the Movie ADI section
+            ###################################################################
+            for sub_asset in asset.findall('./Asset'):
+                sub_metadata = sub_asset.find('./Metadata')
+                if sub_metadata is None:
+                    continue
+                ams = sub_metadata.find('AMS')
+                if ams is None:
+                    continue
+                ams = asset_metadata.find('AMS')
+                cls = str(ams.attrib.get('Asset_Class'))
+                print(cls)
+                logger.debug(f"SubPackage Asset_Name: {str(ams.attrib.get('Asset_Name'))}")
+                logger.debug(f"SubPackage Asset_ID: {str(ams.attrib.get('Asset_ID'))}")
+                logger.debug(f"SubPackage Class_ID: {cls}")
+                if cls == 'movie':
+                    logger.debug(f"Processing SubPackage Class_ID: {cls}")
+                    for sub_app_data in sub_metadata.findall('App_Data'):
+                        name = str(sub_app_data.attrib.get('Name'))
+                        value = str(sub_app_data.attrib.get('Value'))
+                        # get and parse Audio Languages
+                        if name == 'Languages':
+                            audio_id = value.replace(' ','_').upper()
+                            if audio_id != "":
+                                objAudios.append(audio_id)
+                                if audio_id not in fullAudios:
+                                    fullAudios.append(audio_id)
+                        # get and parse Resolution
+                        if name == 'Resolution':
+                            resolution_id = value.replace(' ','_').upper()
+                            if resolution_id != "":
+                                objResolutions.append(resolution_id)
+                                if resolution_id not in fullResolutions:
+                                    fullResolutions.append(resolution_id)
+                        # get and parse Subtitles
+                        if name == 'Subtitle_Languages':
+                            subtitle_id = value.replace(' ','_').upper()
+                            if subtitle_id != "":
+                                objSubtitles.append(subtitle_id)
+                                if subtitle_id not in fullSubtitles:
+                                    fullSubtitles.append(subtitle_id)
         #################################################################################################
         #################################################################################################
         objTmp = {
@@ -425,12 +442,12 @@ def fetchAndPrepareADIData():
                 "ContentCategories": objContentCategories,
                 "ContentGenres": objGenres,
                 "ContentAudiences": objContentAudiences,
-                "ContentProductionYear": [txtProductionYear],
+                "ContentProductionYear": objProductionYear,
                 "ContentActors": objActors,
                 "ContentDirectors": objDirectors,
                 "ContentProducers": objProducers,
                 "ContentStudios": objStudios,
-                "ContentCountryOfOrigin": [txtCountryOfOrigin],
+                "ContentCountryOfOrigin": fullCountryofOrigin,
                 "ContentParentalRating": objParentalRating,
                 "ContentAwards": objAwards,
                 "ContentResolutions": objResolutions,
@@ -592,7 +609,7 @@ def check_bucket(client):
     if (len(list_with_same_name) > 0) :
         last_modified_file = list_with_same_name[-1]
         logger.debug(last_modified_file)
-        if last_modified_file.endswith(".processed"):
+        if last_modified_file.endswith(".processed"):   
             logger.debug("CSV File Uploaded Successfully.")
         else:
             failed_result = client.get_object(Bucket=outBucket, Key=irisTN + "/content/failed/" + last_modified_file)
