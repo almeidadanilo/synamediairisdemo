@@ -187,20 +187,35 @@ def processKVP(key, values):
 
         response = requests.get(getURL, headers=headers)
         logger.debug(f"KVP API Status Code: {response.status_code}")
+        data = response.json()
         if response.status_code == 404:
             # KVP does not exist, needs to be created
             addURL = outKVP
             logger.debug(f"Adding KVP {key}")
             addResponse = requests.post(addURL, headers=headers, json=body)
             if addResponse.status_code != 201:
-                logger.debug(f"Failed to add the KVP {key}: ", addResponse.status_code)
+                logger.debug(f"Failed to add the KVP {key}: {addResponse.status_code}")
+                logger.debug(f"Body: {addResponse.json()}")
         elif response.status_code == 200:
             # KVP exists, update the value list
+            add = False
+            vals = sorted(data.get("values"))
+            for vl in values:
+                # add to the complete values list only the new items received from "values"
+                if vl not in vals:
+                    vals.append(vl)
+                    add = True
+            body = {
+                "key": key,
+                "values": sorted(vals)
+            }            
             updateURL = outKVP + '/' + key
-            logger.debug(f"Updating KVP {key}")
-            updateResponse = requests.put(updateURL, headers=headers, json=body)
-            if updateResponse.status_code != 204:
-                logger.debug(f"Failed to update the KVP {key}: ", updateResponse.status_code)
+            logger.debug(f"Updating KVP {key}, with {body}")
+            if add:
+                updateResponse = requests.put(updateURL, headers=headers, json=body)
+                if updateResponse.status_code != 204:
+                    logger.debug(f"Failed to update the KVP {key}: {updateResponse.status_code}")
+                    logger.debug(f"Body: {updateResponse.json()}")
         else:
             logger.debug(f"Unexpected API return: {response.status_code}")
             return
@@ -395,9 +410,9 @@ def fetchAndPrepareADIData():
                 ams = sub_metadata.find('AMS')
                 if ams is None:
                     continue
-                ams = asset_metadata.find('AMS')
+                ams = sub_metadata.find('AMS')
                 cls = str(ams.attrib.get('Asset_Class'))
-                print(cls)
+                #print(cls)
                 logger.debug(f"SubPackage Asset_Name: {str(ams.attrib.get('Asset_Name'))}")
                 logger.debug(f"SubPackage Asset_ID: {str(ams.attrib.get('Asset_ID'))}")
                 logger.debug(f"SubPackage Class_ID: {cls}")
@@ -429,31 +444,39 @@ def fetchAndPrepareADIData():
                                     fullSubtitles.append(subtitle_id)
         #################################################################################################
         #################################################################################################
+        metadata_block = {}     
+        # Mapping all variable names to the intended JSON keys
+        all_metadata_fields = {
+            "CntProviders": objProviders,
+            "CntProducts": objProducts,
+            "CntAdvisories": objContentAdvisory,
+            "CntCategories": objContentCategories,
+            "CntGenres": objGenres,
+            "CntAudiences": objContentAudiences,
+            "CntProductionYear": objProductionYear,
+            "CntActors": objActors,
+            "CntDirectors": objDirectors,
+            "CntProducers": objProducers,
+            "CntStudios": objStudios,
+            "CntCountryOfOrigin": fullCountryofOrigin,
+            "CntarentalRating": objParentalRating,
+            "CntAwards": objAwards,
+            "CntResolutions": objResolutions,
+            "AudioLanguages": objAudios,
+            "SubtitleLanguages": objSubtitles
+        }
+        # Add to the objTmp only the items listed in outMetadata
+        for key, value in all_metadata_fields.items():
+            if key in outMetadata:
+                metadata_block[key] = value
+        #################################################################################################
         objTmp = {
             "contentId": txtContentID,
             "contentName": txtContentName,
             "contentType": [txtContentType],
             "expirationDate": str(expirationDate.isoformat()),
             "control": {"allowAdInsertion": True},
-            "metadata": {
-                "ContentProviders": objProviders,
-                "ContentProducts": objProducts,
-                "ContentAdvisories": objContentAdvisory,
-                "ContentCategories": objContentCategories,
-                "ContentGenres": objGenres,
-                "ContentAudiences": objContentAudiences,
-                "ContentProductionYear": objProductionYear,
-                "ContentActors": objActors,
-                "ContentDirectors": objDirectors,
-                "ContentProducers": objProducers,
-                "ContentStudios": objStudios,
-                "ContentCountryOfOrigin": fullCountryofOrigin,
-                "ContentParentalRating": objParentalRating,
-                "ContentAwards": objAwards,
-                "ContentResolutions": objResolutions,
-                "ContentAudioLanguages": objAudios,
-                "ContentSubtitleLanguages": objSubtitles
-            }
+            "metadata": metadata_block
         }
 
         # Avoiding duplications in the exportObject
@@ -464,40 +487,40 @@ def fetchAndPrepareADIData():
         
         # Process the unique collected KVPs
         logger.info("Starting to process the KVPs")
-        if len(fullProviders) > 0:
-            processKVP("ContentProviders", fullProviders)
-        if len(fullProducts) > 0:
-            processKVP("ContentProducts", fullProducts)
-        if len(fullContentAdvisory) > 0:
-            processKVP("ContentAdvisories", fullContentAdvisory)
-        if len(fullContentCategories) > 0:
-            processKVP("ContentCategories", fullContentCategories)
-        if len(fullGenres) > 0:
-            processKVP("ContentGenres", fullGenres)
-        if len(fullContentAudiences) > 0:
-            processKVP("ContentAudiences", fullContentAudiences)
-        if len(fullProductionYears) > 0:
-            processKVP("ContentProductionYear", fullProductionYears)
-        if len(fullActors) > 0:
-            processKVP("ContentActors", fullActors)    
-        if len(fullDirectors) > 0:
-            processKVP("ContentDirectors", fullDirectors)               
-        if len(fullProducers) > 0:
-            processKVP("ContentProducers", fullProducers)
-        if len(fullStudios) > 0:
-            processKVP("ContentStudios", fullStudios)
-        if len(fullCountryofOrigin) > 0:
-            processKVP("ContentCountryOfOrigin", fullCountryofOrigin)
-        if len(fullParentalRating) > 0:
-            processKVP("ContentParentalRating", fullParentalRating)
-        if len(fullAwards) > 0:
-            processKVP("ContentAwards", fullAwards)
-        if len(fullResolutions) > 0:
-            processKVP("ContentResolutions", fullResolutions)
-        if len(fullAudios) > 0:
-            processKVP("ContentAudioLanguages", fullAudios)
-        if len(fullSubtitles) > 0:
-            processKVP("ContentSubtitleLanguages", fullSubtitles)         
+        if (len(fullProviders) > 0 and "CntProviders" in outMetadata):
+            processKVP("CntProviders", fullProviders)
+        if (len(fullProducts) > 0 and "CntProducts" in outMetadata):
+            processKVP("CntProducts", fullProducts)
+        if (len(fullContentAdvisory) > 0 and "CntAdvisories" in outMetadata):
+            processKVP("CntAdvisories", fullContentAdvisory)
+        if (len(fullContentCategories) > 0 and "CntCategories" in outMetadata):
+            processKVP("CntCategories", fullContentCategories)
+        if (len(fullGenres) > 0 and "CntGenres" in outMetadata):
+            processKVP("CntGenres", fullGenres)
+        if (len(fullContentAudiences) > 0 and "CntAudiences" in outMetadata):
+            processKVP("CntAudiences", fullContentAudiences)
+        if (len(fullProductionYears) > 0 and "CntProductionYear" in outMetadata):
+            processKVP("CntProductionYear", fullProductionYears)
+        if (len(fullActors) > 0 and "CntActors" in outMetadata):
+            processKVP("CntActors", fullActors)    
+        if (len(fullDirectors) > 0 and "CntDirectors" in outMetadata):
+            processKVP("CntDirectors", fullDirectors)               
+        if (len(fullProducers) > 0 and "CntProducers" in outMetadata):
+            processKVP("CntProducers", fullProducers)
+        if (len(fullStudios) > 0 and "CntStudios" in outMetadata):
+            processKVP("CntStudios", fullStudios)
+        if (len(fullCountryofOrigin) > 0 and "CntCountryOfOrigin" in outMetadata):
+            processKVP("CntCountryOfOrigin", fullCountryofOrigin)
+        if (len(fullParentalRating) > 0 and "CntParentalRating" in outMetadata):
+            processKVP("CntParentalRating", fullParentalRating)
+        if (len(fullAwards) > 0 and "CntAwards" in outMetadata):
+            processKVP("CntAwards", fullAwards)
+        if (len(fullResolutions) > 0 and "CntResolutions" in outMetadata):
+            processKVP("CntResolutions", fullResolutions)
+        if (len(fullAudios) > 0 and "AudioLanguages" in outMetadata):
+            processKVP("AudioLanguages", fullAudios)
+        if (len(fullSubtitles) > 0 and "SubtitleLanguages" in outMetadata):
+            processKVP("SubtitleLanguages", fullSubtitles)         
         logger.info("Finished to process the KVPs")
 
     except TypeError as tp:
@@ -550,8 +573,6 @@ def create_boto3_client():
     response = requests.post(myURL, headers=headers)
     responseJSON = response.json()
 
-    #logger.debug(f"Boto Authorization: {responseJSON}")
-
     AccessKeyId = responseJSON['AccessKeyId']
     SecretAccessKey = responseJSON['SecretAccessKey']
     SessionToken = responseJSON['SessionToken']
@@ -571,6 +592,7 @@ def create_boto3_client():
 # Push the jsonl file to AWS through BOTO
 ######################################################################################################
 def send_jsonl(client, method):
+    logger.debug("Entering send_jsonl")
     global jsonlFile, outBucket, irisTN
 
     if method == "add":
@@ -586,39 +608,41 @@ def send_jsonl(client, method):
     response_put = client.upload_file(jsonlFile.replace('./', ''), outBucket, s3_bucket_file_path)
 
     logger.debug(f"Response: {response_put}")
+    logger.debug("Exiting send_jsonl")
 
 ######################################################################################################
 # Check if the file is processed in the S3 bucket
 ######################################################################################################
 def check_bucket(client):
+    logger.debug("Entering check_bucket")
+
     global outBucket, jsonlFile
 
-    list_with_same_name = []
-    last_modified_file = ""
+    file_name = jsonlFile.replace('./', '')
+    fKey = ''
 
     response = client.list_objects(Bucket=outBucket)
     contents = response['Contents']
-    for i in range(len(contents)):
-        if jsonlFile in contents[i]['Key']:
-            same_name_full_path = contents[i]['Key']
-            same_name = same_name_full_path[same_name_full_path.rindex("/")+1:]
-            list_with_same_name.append(same_name)
-    
-    list_with_same_name.sort()
 
-    if (len(list_with_same_name) > 0) :
-        last_modified_file = list_with_same_name[-1]
-        logger.debug(last_modified_file)
-        if last_modified_file.endswith(".processed"):   
-            logger.debug("CSV File Uploaded Successfully.")
-        else:
-            failed_result = client.get_object(Bucket=outBucket, Key=irisTN + "/content/failed/" + last_modified_file)
-            logger.debug(failed_result)
-            logger.debug(failed_result["Body"].read())
-            
-            logger.debug("ERROR")
-    else:
-        logger.debug("CSV File not uploaded.")
+    logger.debug(f"Bucket: {outBucket}")
+    logger.debug(f"FileName: {file_name}")
+    
+    for i in range(len(contents)):
+        fKey = contents[i]['Key']
+        #logger.debug(f"S3 Bucket Files: {fKey}")
+        if file_name in fKey:
+            logger.debug(f"S3 Bucket Files: {fKey}")
+            if 'ingested' in fKey:
+                logger.debug(f"{file_name} File Uploaded Successfully.")
+            elif 'errinfo' in fKey:
+                failed_result = client.get_object(Bucket=outBucket, Key=irisTN + "/content/failed/" + fKey)
+                logger.debug(f"ERROR processing {file_name}")
+                logger.debug(failed_result)
+                logger.debug(failed_result["Body"].read())
+            else:
+                logger.debug(f"{file_name} File not uploaded or not processed.")
+    
+    logger.debug("Exiting check_bucket")
 
 ######################################################################################################
 # Wait function
@@ -632,7 +656,7 @@ def wait(seconds):
 ######################################################################################################
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-input', type=str, default='sample.xml',help='Go Tenant ID')
+parser.add_argument('-input', type=str, default='Armageddon 2.xml',help='Go Tenant ID')
 parser.add_argument('-output', type=str, default='op7z4geq',help='Iris Tenant ID')
 parser.add_argument('-log', type=str, default='file', choices=['console', 'file'], help='Log output destination')
 parser.add_argument('-level', type=str, default='debug', choices=['info', 'debug'], help='Log verbosity level')
@@ -653,6 +677,7 @@ if (not(getOutputItems(iristenant))):
 # Build Iris Access Token
 if irisTK == '':
     logger.debug("Calling getIrisAccessToken")
+    irisTK = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlhzYTZEYlBfUnVELVB1eGNGV1hrTCJ9.eyJodHRwczovL2FjY291bnQuc3luYW1lZGlhLmNvbS9pZCI6Ijc1OTUwODY4MjgiLCJodHRwczovL3VzZXIuc3luYW1lZGlhLmNvbS9pZCI6ImlyaXMtbWFya3RpbmctYXBwLWMyNzkwN2JkLTRkYzgtNDgxNC1iZWFkLTU3MzUwMGI0YTUwMSIsImh0dHBzOi8vcHJvamVjdC5zeW5hbWVkaWEuY29tL2lkIjoic2pkZzN4emQiLCJodHRwczovL2NsYXJpc3NhLnN5bmFtZWRpYS5jb20vaWQiOiJiMTNqYmI4byIsImh0dHBzOi8vaXJpcy5zeW5hbWVkaWEuY29tL2lkIjoib3A3ejRnZXEiLCJodHRwczovL3ZpdmlkLnN5bmFtZWRpYS5jb20vaWQiOiJ4ZjdzNXY4eCIsImh0dHBzOi8vY3NmZXllLnN5bmFtZWRpYS5jb20vaWQiOiJ6azA4ajVzMSIsImh0dHBzOi8vZXZlcmd1YXJkLnN5bmFtZWRpYS5jb20vaWQiOiJ0aTdsbHdocyIsImh0dHBzOi8vZ28uc3luYW1lZGlhLmNvbS9pZCI6Ind6bGJ5bnl1IiwiaHR0cHM6Ly9jbGllbnQtaWRlbnRpdHkuc3luYW1lZGlhLmNvbS9pZCI6InptajN2dmp6IiwiaXNzIjoiaHR0cHM6Ly9hdXRoLnN5bmFtZWRpYS5jb20vIiwic3ViIjoieXdldTV2aURzWEFJcWZGcjlvQmNNVGgzbUlSS1hWM2RAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vcHJvamVjdHMuc3luYW1lZGlhLmNvbSIsImlhdCI6MTc1MTU0NjYwMiwiZXhwIjoxNzUxNTY4MjAyLCJzY29wZSI6ImlyaXM6cHJvZHVjdC1yYXRpbmc6ZGVsZXRlIGlyaXM6cHJvZHVjdC1zdWJzY3JpYmVyczpkZWxldGUgaXJpczpwcm9kdWN0LWNyZWF0aXZlczpkZWxldGUgaXJpczpwcm9kdWN0LXJhdGluZzpyZWFkIGlyaXM6cHJvZHVjdC1jcmVhdGl2ZXM6cmVhZCBpcmlzOnByb2R1Y3QtcmVwb3J0czpyZWFkIGlyaXM6cHJvZHVjdC1zdWJzY3JpYmVyczpyZWFkIGlyaXM6cHJvZHVjdC1yYXRpbmc6d3JpdGUgaXJpczpwcm9kdWN0LXN1YnNjcmliZXJzOndyaXRlIGlyaXM6cHJvZHVjdC1jcmVhdGl2ZXM6d3JpdGUgaXJpczpwcm9kdWN0LW1hbmFnZW1lbnQtYXBpOnJlYWQgaXJpczpwcm9kdWN0LW1hbmFnZW1lbnQtYXBpOndyaXRlIGlyaXM6YWxsOmFsbCIsImd0eSI6ImNsaWVudC1jcmVkZW50aWFscyIsImF6cCI6Inl3ZXU1dmlEc1hBSXFmRnI5b0JjTVRoM21JUktYVjNkIn0.ff-ks_ZfKypvlq4YU7k1gRWuDnSShPo424bkeCpmmlEZvCHY6v1BQUetLP1eQN7cROTHZDLzr1NMbd0SkdU4CjYxQ0NaW651Ai3geqN5GVVxZ7ZF_XdD8mc4tZNPHD_OEPI-z7Nt76k6rgRa281MacCbE-bDHkOua0vc-FIiD_kIZcrzinW6jZz2ilMBx8RYOOpoZtbdVclO1ozbN7-fta58W1PtsE1RBbEjNK5cvHMuZAcC3Svl74G-Y30D_Ib0rVa_Yy-BGhtkPfyoMyRdOW2V2F5ghhlzQww1-t-PCriVCUDbaohtRJWqujqjLC3Z_NpyTUwFu2PAPFy6H2iFqQ'
     #getIrisAccessToken()
 
 # Get Go VOD data export 
@@ -663,22 +688,21 @@ logger.debug(f"ExportObject: {exportObject}")
 # Save the jsonl file
 logger.debug("Saving the jsonl file")
 saveMetadataFile()
-#jsonlFile = '20250618_164659_noindent.cnt.jsonl'
 if len(exportObject) == 0:
     logger.debug ('Error fetching the VOD metadata')
     exit(-1)
 # Create BOTO client
 logger.debug("Creating BOTO client")
-#bot = create_boto3_client()
+bot = create_boto3_client()
 # Push the jsonl file to AWS Folder
 logger.debug("Sending the jsonl to S3 bucket")
-#send_jsonl(bot, "add")
+send_jsonl(bot, "add")
 # Wait for 2 minutes
 logger.debug("Waiting: 120s")
-#wait(120)
+wait(1)
 # Check if the file was properly processed
 logger.debug("Checking S3")
-#check_bucket(bot)
+check_bucket(bot)
 
 logger.debug("#######################################")
 logger.debug('# END PROCESSING ')
