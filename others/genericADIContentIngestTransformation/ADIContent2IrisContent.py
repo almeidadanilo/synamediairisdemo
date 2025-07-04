@@ -22,6 +22,7 @@ outCID = ''
 outCSC = ''
 outAUT = ''
 outGTP = ''
+outACR = ''
 outMetadata = []
 out_headers = ''
 outBucket = ''
@@ -32,6 +33,7 @@ irisTKExpire = 0
 jsonlFile = ''
 exportObject = []
 c_key = ''
+expirationBias = 365
 logger = logging.getLogger("vod_logger")
 
 ######################################################################################################
@@ -86,7 +88,7 @@ def is_alnum_full(s):
 # Get Output Credentials
 ######################################################################################################
 def getOutputItems(iristenant):
-    global outURL, outCID, outCSC, outAUT, outGTP, irisTN, outBucket, outKVP, outMetadata
+    global outURL, outCID, outCSC, outAUT, outGTP, irisTN, outBucket, outKVP, outMetadata, outACR
 
     logger.debug("Enter getOutputItems")
     if iristenant == "":
@@ -115,6 +117,8 @@ def getOutputItems(iristenant):
                         logger.debug(f"Iris Upload Bucket: {outBucket}")
                         outKVP = decrypt(item["KVP"])
                         logger.debug(f"Iris KVP API: {outKVP}")
+                        outACR = decrypt(item["ACR"])
+                        logger.debug(f"Iris AWS: {outACR}")
                         outMetadata = item["METADATA"]
                         logger.debug(f"Export ADI Metadata: {outMetadata}")
                         return True
@@ -132,7 +136,7 @@ def getOutputItems(iristenant):
 # Get Iris Access Token
 ######################################################################################################
 def getIrisAccessToken():
-    global irisTK, irisTKExpire
+    global irisTK, irisTKExpire, outCID, outCSC, outAUT, outGTP
 
     try:
 
@@ -236,11 +240,11 @@ def format_person_name(name):
 ######################################################################################################
 # Build json response from Go
 ######################################################################################################
-def fetchAndPrepareADIData():
+def fetchAndPrepareADIData(input_file):
     global exportObject
 
     now = datetime.datetime.now(timezone.utc)
-    expirationDate = now + datetime.timedelta(days=365)
+    expirationDate = now + datetime.timedelta(days=expirationBias)
     txtContentID = ''
     txtContentName = ''
     txtContentType = 'VOD'
@@ -282,7 +286,7 @@ def fetchAndPrepareADIData():
 
     try:
         # Load the XML file
-        tree = ET.parse('Armageddon 2.xml')
+        tree = ET.parse(input_file)
         root = tree.getroot()
         # Get the main metadata (package-level)
         package_metadata = root.find('./Metadata')
@@ -566,9 +570,10 @@ def saveMetadataFile():
 # Create BOTO client for AWS access
 ######################################################################################################
 def create_boto3_client():
-    global irisTK, out_headers, irisTN
+    logger.debug("Entering create_boto3_client")
+    global irisTK, out_headers, irisTN, outACR
 
-    myURL = 'https://backoffice-apb.ads.iris.synamedia.com/credentials/aws'
+    myURL = outACR
     headers = {"Authorization": irisTK}
     response = requests.post(myURL, headers=headers)
     responseJSON = response.json()
@@ -583,9 +588,8 @@ def create_boto3_client():
         aws_secret_access_key = SecretAccessKey,
         aws_session_token = SessionToken
     )
-
     out_headers = {"content-Type": "application/json", "X-iris-tenantId": irisTN,"Authorization": irisTK}
-
+    logger.debug("Exiting create_boto3_client")
     return client
 
 ######################################################################################################
@@ -677,12 +681,11 @@ if (not(getOutputItems(iristenant))):
 # Build Iris Access Token
 if irisTK == '':
     logger.debug("Calling getIrisAccessToken")
-    irisTK = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlhzYTZEYlBfUnVELVB1eGNGV1hrTCJ9.eyJodHRwczovL2FjY291bnQuc3luYW1lZGlhLmNvbS9pZCI6Ijc1OTUwODY4MjgiLCJodHRwczovL3VzZXIuc3luYW1lZGlhLmNvbS9pZCI6ImlyaXMtbWFya3RpbmctYXBwLWMyNzkwN2JkLTRkYzgtNDgxNC1iZWFkLTU3MzUwMGI0YTUwMSIsImh0dHBzOi8vcHJvamVjdC5zeW5hbWVkaWEuY29tL2lkIjoic2pkZzN4emQiLCJodHRwczovL2NsYXJpc3NhLnN5bmFtZWRpYS5jb20vaWQiOiJiMTNqYmI4byIsImh0dHBzOi8vaXJpcy5zeW5hbWVkaWEuY29tL2lkIjoib3A3ejRnZXEiLCJodHRwczovL3ZpdmlkLnN5bmFtZWRpYS5jb20vaWQiOiJ4ZjdzNXY4eCIsImh0dHBzOi8vY3NmZXllLnN5bmFtZWRpYS5jb20vaWQiOiJ6azA4ajVzMSIsImh0dHBzOi8vZXZlcmd1YXJkLnN5bmFtZWRpYS5jb20vaWQiOiJ0aTdsbHdocyIsImh0dHBzOi8vZ28uc3luYW1lZGlhLmNvbS9pZCI6Ind6bGJ5bnl1IiwiaHR0cHM6Ly9jbGllbnQtaWRlbnRpdHkuc3luYW1lZGlhLmNvbS9pZCI6InptajN2dmp6IiwiaXNzIjoiaHR0cHM6Ly9hdXRoLnN5bmFtZWRpYS5jb20vIiwic3ViIjoieXdldTV2aURzWEFJcWZGcjlvQmNNVGgzbUlSS1hWM2RAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vcHJvamVjdHMuc3luYW1lZGlhLmNvbSIsImlhdCI6MTc1MTU0NjYwMiwiZXhwIjoxNzUxNTY4MjAyLCJzY29wZSI6ImlyaXM6cHJvZHVjdC1yYXRpbmc6ZGVsZXRlIGlyaXM6cHJvZHVjdC1zdWJzY3JpYmVyczpkZWxldGUgaXJpczpwcm9kdWN0LWNyZWF0aXZlczpkZWxldGUgaXJpczpwcm9kdWN0LXJhdGluZzpyZWFkIGlyaXM6cHJvZHVjdC1jcmVhdGl2ZXM6cmVhZCBpcmlzOnByb2R1Y3QtcmVwb3J0czpyZWFkIGlyaXM6cHJvZHVjdC1zdWJzY3JpYmVyczpyZWFkIGlyaXM6cHJvZHVjdC1yYXRpbmc6d3JpdGUgaXJpczpwcm9kdWN0LXN1YnNjcmliZXJzOndyaXRlIGlyaXM6cHJvZHVjdC1jcmVhdGl2ZXM6d3JpdGUgaXJpczpwcm9kdWN0LW1hbmFnZW1lbnQtYXBpOnJlYWQgaXJpczpwcm9kdWN0LW1hbmFnZW1lbnQtYXBpOndyaXRlIGlyaXM6YWxsOmFsbCIsImd0eSI6ImNsaWVudC1jcmVkZW50aWFscyIsImF6cCI6Inl3ZXU1dmlEc1hBSXFmRnI5b0JjTVRoM21JUktYVjNkIn0.ff-ks_ZfKypvlq4YU7k1gRWuDnSShPo424bkeCpmmlEZvCHY6v1BQUetLP1eQN7cROTHZDLzr1NMbd0SkdU4CjYxQ0NaW651Ai3geqN5GVVxZ7ZF_XdD8mc4tZNPHD_OEPI-z7Nt76k6rgRa281MacCbE-bDHkOua0vc-FIiD_kIZcrzinW6jZz2ilMBx8RYOOpoZtbdVclO1ozbN7-fta58W1PtsE1RBbEjNK5cvHMuZAcC3Svl74G-Y30D_Ib0rVa_Yy-BGhtkPfyoMyRdOW2V2F5ghhlzQww1-t-PCriVCUDbaohtRJWqujqjLC3Z_NpyTUwFu2PAPFy6H2iFqQ'
-    #getIrisAccessToken()
+    getIrisAccessToken()
 
 # Get Go VOD data export 
 logger.debug("Fetching Go Catalog")
-fetchAndPrepareADIData()
+fetchAndPrepareADIData(input_file)
 logger.debug(f"len(exportObject): {str(len(exportObject))}")
 logger.debug(f"ExportObject: {exportObject}")
 # Save the jsonl file
@@ -697,9 +700,9 @@ bot = create_boto3_client()
 # Push the jsonl file to AWS Folder
 logger.debug("Sending the jsonl to S3 bucket")
 send_jsonl(bot, "add")
-# Wait for 2 minutes
-logger.debug("Waiting: 120s")
-wait(1)
+# Wait for 1 minute
+logger.debug("Waiting: 60s")
+wait(60)
 # Check if the file was properly processed
 logger.debug("Checking S3")
 check_bucket(bot)

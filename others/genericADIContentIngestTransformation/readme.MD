@@ -53,6 +53,7 @@ Example:
       "CS": "<encrypted>",
       "BK": "<encrypted>",
       "KVP": "<encrypted>",
+      "ACR": "<encrypted>",
       "METADATA": [
         "CntProviders",         -- from <ADI><Asset><Metadata><AMS Provider_ID/>
         "CntProducts",          -- from <ADI><Asset><Metadata><AMS Product/>
@@ -79,6 +80,7 @@ Example:
 The kvp in Iris will be represented as: key={METADATA.key}, Value={values from ADI}
 To not process one or more of the metadata listed, simply remove the entry from metadata in `output.ini.json`.
 This script do not print any information in the prompt, it logs everything in the `vod_ingest.log` file, cumulative.
+For asset exipiration o Iris ingested data collection the script offer a variable caller `expirationBias` default set to 365 (days) should present the amount of days for the ingested content to expire in Iris.
 
 ```
 
@@ -109,7 +111,7 @@ python ADIContent2IrisContent.py \
 - JSONL file (e.g., `20250630_103101.cnt.jsonl`)
 - Includes `contentId`, `contentName`, and filtered `metadata`
 - Only includes metadata fields listed in the `METADATA` array from `output.ini.json`
-
+- This script output two files one following jsonl standard where every line is a complete json object and another with idents, easier to    read if needed. The file ingested on Iris is the jsonl one.
 ---
 
 ## 🛠️ Functions of Interest
