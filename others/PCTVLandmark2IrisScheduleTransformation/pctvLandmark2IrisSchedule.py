@@ -226,10 +226,9 @@ def prepare_iris_ingest_file():
                 "channelId": channel,
                 "startDateTime": breakStartTime,
                 "endDateTime": breakEndTime,
-                "eventType": "Break",
+                "eventType": 'Break',
                 "eventId": breakEventId,
-                "availId": "",
-                "duration": breakDuration
+                "availId": ''
             }
             exportObject.append(objTmp)
             # Reset Iris break counters
@@ -275,9 +274,8 @@ def prepare_iris_ingest_file():
                         "channelId": channel,
                         "startDateTime": progStartTime,
                         "endDateTime": progEndTime,
-                        "eventType": "Content",
-                        "eventId": progPreviousID,
-                        "duration": progDuration
+                        "eventType": 'Content',
+                        "eventId": progPreviousID
                     }
                     exportObject.append(objTmp)
                     # Starting a new one
@@ -318,7 +316,8 @@ def parse_schedule_txt(filepath):
         if re.match(r'\s*HORATX\s+HORAPRG\s+AUT', line):
             header_found = True
             continue
-        if header_found and line.strip():  # only process after the header line
+        ## Only process after the header line
+        if header_found and line.strip():  
             data_lines.append(line.rstrip('\n'))
 
     # Define the fixed column widths
@@ -406,7 +405,7 @@ def saveScheduleFile():
         timestamp = datetime.datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
 
         filename = f'./{channel}-{firstDateTime}-{lastDateTime}-{timestamp}' + '.json'
-        filenameA = f'./{channel}-{firstDateTime}-{lastDateTime}-{timestamp}' + '_noindent.jsonl'
+        filenameA = f'./{channel}-{firstDateTime}-{lastDateTime}-{timestamp}' + '.jsonl'
 
         logger.debug(f"Files: {filename} and {filenameA}")
 
@@ -521,7 +520,7 @@ def wait(seconds):
 ######################################################################################################
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-input', type=str, default='',help='Go Tenant ID')
+parser.add_argument('-input', type=str, default='',help='Landmark Export File (.txt)')
 parser.add_argument('-output', type=str, default='op7z4geq',help='Iris Tenant ID')
 parser.add_argument('-log', type=str, default='file', choices=['console', 'file'], help='Log output destination')
 parser.add_argument('-level', type=str, default='debug', choices=['info', 'debug'], help='Log verbosity level')

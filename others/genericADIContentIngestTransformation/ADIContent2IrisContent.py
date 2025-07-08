@@ -660,7 +660,7 @@ def wait(seconds):
 ######################################################################################################
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-input', type=str, default='',help='Go Tenant ID')
+parser.add_argument('-input', type=str, default='',help='ADI input file (.xml)')
 parser.add_argument('-output', type=str, default='',help='Iris Tenant ID')
 parser.add_argument('-log', type=str, default='file', choices=['console', 'file'], help='Log output destination')
 parser.add_argument('-level', type=str, default='debug', choices=['info', 'debug'], help='Log verbosity level')
