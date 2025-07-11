@@ -2,12 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import dashjs from 'dashjs';
 import axios from 'axios';
 import dt from './data.json';
-import moment from 'moment';
-import userEvent from '@testing-library/user-event';
-import { useAsyncError } from 'react-router-dom';
 
 
-const Specials = ({input_index, inAdPause, inSequence, inAdOverlay}) => {
+const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVideo}) => {
     const [, forceUpdate] = useState(0);
     const leftVideoRef = useRef(null);
     const intervalLeftRef = useRef(null);
@@ -15,6 +12,11 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay}) => {
     const leftCTEnabledRef = useRef(false);
     const displayAdIntervalRef = useRef(null);
     const adOnPauseSequence = useRef(1);
+    const [showAdVideo, setShowAdVideo] = useState(false);
+    const overlayAdRef = useRef(null);
+    const overlayDashRef = useRef(null);
+    const resumeTime = 0;
+    const [adVideoSRC, setAdVideoSRC] = useState('');
     const [overlayVisible, setOverlayVisible] = useState(false);
     const [prevOverlayImg, setPrevOverlayImg] = useState('');
     const [advertiser, setAdvertiser] = useState('');
@@ -231,7 +233,17 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay}) => {
 
     }, [input_index, inAdPause, inSequence]);
   
-    
+    const handleAdVideoEnd = () => {
+        setShowAdVideo(false); // hide ad overlay
+        leftVideoRef.current.currentTime = resumeTime;
+        //leftVideoRef.current.play();
+        //startImageSequence(); // your existing image loop
+        if (overlayDashRef.current) {
+            overlayDashRef.current.reset();
+            overlayDashRef.current = null;
+        }
+    };
+
     const handleDisplayAds = async (url, seq) => {
         const fetchAndRenderAd = async (url1) => {
             try {
@@ -321,6 +333,36 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay}) => {
         }
     };
 
+    const handleVideoAds = async (url, pos) => {
+        try {
+            const ret = await getVast(url);
+            if (ret.status === 200) {
+                const xml = ret.data;
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xml, "application/xml");
+                const mediaFiles = xmlDoc.getElementsByTagName("MediaFile");
+                const impressions = xmlDoc.getElementsByTagName("Impression");
+                const trackers = xmlDoc.getElementsByTagName("Tracking");
+                const errors = xmlDoc.getElementsByTagName("Error");
+                
+                for (let i = 0; i < mediaFiles.length; i++){
+                    const typeAttr = mediaFiles[i].getAttribute("type");
+                    if (typeAttr === 'application/dash+xml') {
+                        setAdVideoSRC(mediaFiles[i].textContent.trim());
+                        console.log("adVideoSRC: ", adVideoSRC);
+                    }
+                }
+                //overlayAdRef.current.initialize(overlayAdRef.current, adVideoSRC, true, 0)
+            }
+            else {
+                console.log("Problem on video ad decision: ", ret.status);
+            }
+        }
+        catch (error) {
+            console.log("handleVideoAds failed: ", error);
+        }        
+    }
+
     useEffect(() => {
         const videoEl = leftVideoRef.current;
         if (!videoEl) return;
@@ -329,25 +371,36 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay}) => {
             console.log('[Specials] Player paused');
             setIsPlaying(false);
             //resetTrackingLabels('l');
-            if (!inAdOverlay && inAdPause) {
-                setShowBlackCover(true);
-            }
-            clearInterval(intervalLeftRef.current);
-            intervalLeftRef.current = null;
-            // ###################################################
-            let did = crypto.randomUUID();
+            //let did = crypto.randomUUID();
+            let did = window.crypto?.randomUUID?.() || Math.random().toString(36).substring(2);
+            console.log("did=", did);            
             let timestamp = Date.now();
-            let displayAdDecision = ''
-            if (hasAdOnPause.current) {
-                displayAdDecision = `https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?transactionId=${timestamp}&deviceId=${did}&sessionId=${timestamp}&position=pre&kvp=language~heb&kvp=profile~p3&kvp=adForm~display`;
-                if (inSequence != '') {
-                    handleDisplayAds(displayAdDecision, true);
+            let displayAdDecision = ''    
+            // If the use case is display ads on pause or display overlays
+            if (inAdOverlay || inAdPause) {
+                if (!inAdOverlay && inAdPause) {
+                    setShowBlackCover(true);
                 }
-                else {
-                    handleDisplayAds(displayAdDecision, false);
+                clearInterval(intervalLeftRef.current);
+                intervalLeftRef.current = null;
+                // ###################################################
+                if (hasAdOnPause.current) {
+                    displayAdDecision = `https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?transactionId=${timestamp}&deviceId=${did}&sessionId=${timestamp}&position=pre&kvp=language~heb&kvp=profile~p3&kvp=adForm~display`;
+                    if (inSequence != '') {
+                        handleDisplayAds(displayAdDecision, true);
+                    }
+                    else {
+                        handleDisplayAds(displayAdDecision, false);
+                    }
+                    setStreamTypeMsg('Display Ads on Pause');
                 }
-                setStreamTypeMsg('Display Ads on Pause');
             }
+            // If the use case is playing a video during the pause 
+            else if (inAdPauseVideo) {
+                displayAdDecision = `https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?transactionId=${timestamp}&deviceId=${did}&sessionId=${timestamp}&position=pre&kvp=language~heb&kvp=adForm~adPause`;
+                handleVideoAds(displayAdDecision, 'onPause');
+            }
+
         };
 
         const handlePlay = () => {
@@ -365,6 +418,19 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay}) => {
             videoEl.removeEventListener('play', handlePlay);
         };
     }, []);
+
+    // To handle the secondary video playback
+    useEffect(() => {
+    if (showAdVideo && adVideoSRC && overlayAdRef.current) {
+        const player = dashjs.MediaPlayer().create();
+        player.updateSettings({
+        debug: { logLevel: dashjs.Debug.LOG_LEVEL_WARNING }
+        });
+
+        player.initialize(overlayAdRef.current, adVideoSRC, true);
+        overlayDashRef.current = player;
+    }
+    }, [showAdVideo, adVideoSRC]);
 
 
     const buildTrackingEvents = (es, tevs, ind) => {
@@ -471,10 +537,20 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay}) => {
         return { isAd: ret, events };        
     }
 
+    function generateUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }    
+
     const buildURL = (url, pl) => {
         let str = '';
-        let did = crypto.randomUUID();
+        //let did = crypto.randomUUID();
+        //let did = window.crypto?.randomUUID?.() || Math.random().toString(36).substring(2);
+        let did = generateUUID();
 
+        console.log("did=", did);
         str = url + '&sessionId=SYNAIRISDEMO_' + pl + '_' + input_index.toString() + '_' + (Math.floor(new Date().getTime() / 1000).toString());
         str = str + '&deviceId=' + did
         
@@ -558,6 +634,11 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay}) => {
             if (intervalLeftRef.current) {
                 clearInterval(intervalLeftRef.current);
                 intervalLeftRef.current = null;
+            }
+            if (inAdPauseVideo) {
+                console.log("leftVideoRef.current.currentTime: ", leftVideoRef.current.currentTime);
+                //resumeTime.current = leftVideoRef.current.currentTime;
+                console.log("resumeTime.current: ", resumeTime.current);
             }
         } else {
             const playLeft = leftVideoRef.current?.play();
@@ -691,13 +772,29 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay}) => {
                     <h2>{dt.vod[input_index].left_title} & {dt.vod[input_index].left_segment} </h2>
                     <label>Stream Type: <b>{leftStreamIsAd ? ' :: AD :: ' + leftCurrentAdvert : streamTypeMsg}</b></label><br/>
                     <div>
-                      <label>Tracking Event Impression ..:: {leftTrackingLabels.impression}</label><br/>
-                      <label>Tracking Event Ad Start   ..:: {leftTrackingLabels.adstart}</label><br />
-                      <label>Tracking Event First Qrl  ..:: {leftTrackingLabels.firstQuartile}</label><br/>
-                      <label>Tracking Event Second Qrl ..:: {leftTrackingLabels.secondQuartile}</label><br/>
-                      <label>Tracking Event Third Qrl  ..:: {leftTrackingLabels.thirdQuartile}</label><br/>
-                      <label>Tracking Event Completion ..:: {leftTrackingLabels.completion}</label><br/>
-                    </div>                     
+                        <table className="w-full text-sm text-left text-gray-700 border border-gray-200">
+                            <thead className="text-xs uppercase bg-gray-50 text-gray-500">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3">Impression</th>
+                                    <th scope="col" className="px-6 py-3">AdStart</th>
+                                    <th scope="col" className="px-6 py-3">25%</th>
+                                    <th scope="col" className="px-6 py-3">50%</th>
+                                    <th scope="col" className="px-6 py-3">75%</th>
+                                    <th scope="col" className="px-6 py-3">AdCompl.</th>
+                                </tr>                                
+                            </thead>
+                            <tbody>
+                                <tr className="hover:bg-gray-100">
+                                    <td className="px-6 py-4">{leftTrackingLabels.impression === '' ? '-' : leftTrackingLabels.impression}</td>
+                                    <td className="px-6 py-4">{leftTrackingLabels.adstart === '' ? '-' : leftTrackingLabels.adstart}</td>
+                                    <td className="px-6 py-4">{leftTrackingLabels.firstQuartile === '' ? '-' : leftTrackingLabels.firstQuartile}</td>
+                                    <td className="px-6 py-4">{leftTrackingLabels.secondQuartile === '' ? '-' : leftTrackingLabels.secondQuartile}</td>
+                                    <td className="px-6 py-4">{leftTrackingLabels.thirdQuartile === '' ? '-' : leftTrackingLabels.thirdQuartile}</td>
+                                    <td className="px-6 py-4">{leftTrackingLabels.completion === '' ? '-' : leftTrackingLabels.completion}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                     <div style={{ position: 'relative', width: '750px', height: 'auto' }}> 
                         <video ref={leftVideoRef} controls preload="none" style={{ width: '100%', display: 'block' }} />
                             {showBlackCover && (
@@ -796,6 +893,23 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay}) => {
                                         Rest assured that YES+ is taking care of your playback until you return.
                                     </p>
                                 </div>
+                            )}
+                            {showAdVideo && (
+                                <video
+                                    ref={overlayAdRef}
+                                    src={''}
+                                    autoPlay = {false}
+                                    onEnded={handleAdVideoEnd}
+                                    style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        zIndex: 15,
+                                        backgroundColor: 'black'
+                                    }}
+                                />
                             )}                    
                     </div>
                 </div>

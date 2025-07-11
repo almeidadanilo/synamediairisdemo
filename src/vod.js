@@ -2,8 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import dashjs from 'dashjs';
 import axios from 'axios';
 import dt from './data.json';
-import moment from 'moment';
-
 
 const Vod = ({input_index}) => {
     const [, forceUpdate] = useState(0);
@@ -13,7 +11,7 @@ const Vod = ({input_index}) => {
     const intervalRightRef = useRef(null);
     const leftPlayer = useRef(null);
     const rightPlayer = useRef(null);
-    const playersInitialized = useRef(false);
+    //const playersInitialized = useRef(false);
     const leftCTEnabledRef = useRef(false);
     const rightCTEnabledRef = useRef(false);
     const [leftUrl, setLeftUrl] = useState((dt.vod[input_index].left_playback_url));
@@ -437,10 +435,20 @@ const Vod = ({input_index}) => {
         return { isAd: ret, events };        
     }
 
+    function generateUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
     const buildURL = (url, pl) => {
         let str = '';
-        let did = crypto.randomUUID();
+        //let did = crypto.randomUUID();
+        //let did = window.crypto?.randomUUID?.() || Math.random().toString(36).substring(2);
+        let did = generateUUID();
 
+        //console.log("did=", did);
         str = url + '&sessionId=SYNAIRISDEMO_' + pl + '_' + input_index.toString() + '_' + (Math.floor(new Date().getTime() / 1000).toString());
         str = str + '&deviceId=' + did
         
@@ -723,12 +731,28 @@ const Vod = ({input_index}) => {
                     <h2>{dt.vod[input_index].left_title} & {dt.vod[input_index].left_segment} </h2>
                     <label>Stream Type: <b>{leftStreamIsAd ? ' :: AD :: ' + leftCurrentAdvert : 'Content'}</b></label><br/>
                     <div>
-                      <label>Tracking Event Impression ..:: {leftTrackingLabels.impression}</label><br/>
-                      <label>Tracking Event Ad Start   ..:: {leftTrackingLabels.adstart}</label><br />
-                      <label>Tracking Event First Qrl  ..:: {leftTrackingLabels.firstQuartile}</label><br/>
-                      <label>Tracking Event Second Qrl ..:: {leftTrackingLabels.secondQuartile}</label><br/>
-                      <label>Tracking Event Third Qrl  ..:: {leftTrackingLabels.thirdQuartile}</label><br/>
-                      <label>Tracking Event Completion ..:: {leftTrackingLabels.completion}</label><br/>
+                        <table className="w-full text-sm text-left text-gray-700 border border-gray-200">
+                            <thead className="text-xs uppercase bg-gray-50 text-gray-500">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3">Impression</th>
+                                    <th scope="col" className="px-6 py-3">AdStart</th>
+                                    <th scope="col" className="px-6 py-3">25%</th>
+                                    <th scope="col" className="px-6 py-3">50%</th>
+                                    <th scope="col" className="px-6 py-3">75%</th>
+                                    <th scope="col" className="px-6 py-3">AdCompl.</th>
+                                </tr>                                
+                            </thead>
+                            <tbody>
+                                <tr className="hover:bg-gray-100">
+                                    <td className="px-6 py-4">{leftTrackingLabels.impression === '' ? '-' : leftTrackingLabels.impression}</td>
+                                    <td className="px-6 py-4">{leftTrackingLabels.adstart === '' ? '-' : leftTrackingLabels.adstart}</td>
+                                    <td className="px-6 py-4">{leftTrackingLabels.firstQuartile === '' ? '-' : leftTrackingLabels.firstQuartile}</td>
+                                    <td className="px-6 py-4">{leftTrackingLabels.secondQuartile === '' ? '-' : leftTrackingLabels.secondQuartile}</td>
+                                    <td className="px-6 py-4">{leftTrackingLabels.thirdQuartile === '' ? '-' : leftTrackingLabels.thirdQuartile}</td>
+                                    <td className="px-6 py-4">{leftTrackingLabels.completion === '' ? '-' : leftTrackingLabels.completion}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>                     
                     <div> 
                       <video ref={leftVideoRef} controls preload="none" style={{ width: '750px' }} />
@@ -738,12 +762,28 @@ const Vod = ({input_index}) => {
                     <h2>{dt.vod[input_index].right_title} & {dt.vod[input_index].right_segment} </h2>
                     <label>Stream Type: <b>{rightStreamIsAd ? ' :: AD :: ' + rightCurrentAdvert : 'Content'}</b></label><br/>
                     <div>
-                      <label>Tracking Event Impression ..:: {rightTrackingLabels.impression}</label><br/>
-                      <label>Tracking Event Ad Start   ..:: {rightTrackingLabels.adstart}</label><br />
-                      <label>Tracking Event First Qrl  ..:: {rightTrackingLabels.firstQuartile}</label><br/>
-                      <label>Tracking Event Second Qrl ..:: {rightTrackingLabels.secondQuartile}</label><br/>
-                      <label>Tracking Event Third Qrl  ..:: {rightTrackingLabels.thirdQuartile}</label><br/>
-                      <label>Tracking Event Completion ..:: {rightTrackingLabels.completion}</label><br/>
+                        <table className="w-full text-sm text-left text-gray-700 border border-gray-200">
+                            <thead className="text-xs uppercase bg-gray-50 text-gray-500">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3">Impression</th>
+                                    <th scope="col" className="px-6 py-3">AdStart</th>
+                                    <th scope="col" className="px-6 py-3">25%</th>
+                                    <th scope="col" className="px-6 py-3">50%</th>
+                                    <th scope="col" className="px-6 py-3">75%</th>
+                                    <th scope="col" className="px-6 py-3">AdCompl.</th>
+                                </tr>                                
+                            </thead>
+                            <tbody>
+                                <tr className="hover:bg-gray-100">
+                                    <td className="px-6 py-4">{rightTrackingLabels.impression === '' ? '-' : rightTrackingLabels.impression}</td>
+                                    <td className="px-6 py-4">{rightTrackingLabels.adstart === '' ? '-' : rightTrackingLabels.adstart}</td>
+                                    <td className="px-6 py-4">{rightTrackingLabels.firstQuartile === '' ? '-' : rightTrackingLabels.firstQuartile}</td>
+                                    <td className="px-6 py-4">{rightTrackingLabels.secondQuartile === '' ? '-' : rightTrackingLabels.secondQuartile}</td>
+                                    <td className="px-6 py-4">{rightTrackingLabels.thirdQuartile === '' ? '-' : rightTrackingLabels.thirdQuartile}</td>
+                                    <td className="px-6 py-4">{rightTrackingLabels.completion === '' ? '-' : rightTrackingLabels.completion}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>                    
                     <div>
                       <video ref={rightVideoRef} controls preload="none" style={{ width: '750px' }} />

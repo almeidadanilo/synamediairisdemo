@@ -17,7 +17,7 @@ function Menu() {
   const linearItems = data.vod
     .filter(item => item.type === "LINEAR")
     .map((item, index) => {
-      const linearIndex = data.vod.filter(d => d.type === "VOD").length + index;
+      //const linearIndex = data.vod.filter(d => d.type === "VOD").length + index;
       return {
         label: item.menu_title,
         path: `/playback${item.demo_scene}`
@@ -107,7 +107,12 @@ function Menu() {
                 <Link to="/specials2" className="block px-4 py-2 hover:bg-gray-600" onClick={closeMenus}>
                   VOD Ad Video + Overlay
                 </Link>
-              </li>              
+              </li>   
+              <li key="3">
+                <Link to="/specials3" className="block px-4 py-2 hover:bg-gray-600" onClick={closeMenus}>
+                  VOD Ad Video + Video Pause Ads
+                </Link>
+              </li>                              
             </ul>
           )}
         </li>
