@@ -2,12 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import dashjs from 'dashjs';
 import axios from 'axios';
 import dt from './data.json';
+import { use } from 'react';
 
 
 const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVideo}) => {
     const [, forceUpdate] = useState(0);
     const leftVideoRef = useRef(null);
     const intervalLeftRef = useRef(null);
+    const intervalSecondaryRef = useRef(null);
     const leftPlayer = useRef(null);
     const leftCTEnabledRef = useRef(false);
     const displayAdIntervalRef = useRef(null);
@@ -16,6 +18,8 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
     const overlayAdRef = useRef(null);
     const overlayDashRef = useRef(null);
     const resumeTime = 0;
+    const secondaryVideoImpressions = useRef([])
+    const secondaryVideoTrackers = useRef([])
     const [adVideoSRC, setAdVideoSRC] = useState('');
     const [overlayVisible, setOverlayVisible] = useState(false);
     const [prevOverlayImg, setPrevOverlayImg] = useState('');
@@ -35,6 +39,8 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
     const hasAdOnPause = useRef(false);
     const sequence = useRef("");
     const displayAdURL = useRef("");
+    const [isStartSelected, setIsStartSelected] = useState(true);
+    const toggleModeRef = useRef("start");
     const [leftOverlayImg, setLeftOverlayImg] = useState('');
     const [leftCurrentAdvert, setLeftCurrentAdvert] = useState('');
     const [leftTrackingLabels, setLeftTrackingLabels] = useState({
@@ -71,6 +77,10 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
             if (displayAdIntervalRef.current) {
                 clearInterval(displayAdIntervalRef.current);
                 displayAdIntervalRef.current = null;
+            }
+            if (intervalSecondaryRef.current) {
+                clearInterval(intervalSecondaryRef.current);
+                intervalSecondaryRef.current = null;
             }
         };
     }, []); // <-- run once on mount
@@ -209,6 +219,7 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
         });
     }
 
+    // Cleaning on Exit
     useEffect(() => {
         
         console.log("enter cleaning");
@@ -233,17 +244,27 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
 
     }, [input_index, inAdPause, inSequence]);
   
+    // Handling the end of the secondary video playback
     const handleAdVideoEnd = () => {
-        setShowAdVideo(false); // hide ad overlay
-        leftVideoRef.current.currentTime = resumeTime;
-        //leftVideoRef.current.play();
-        //startImageSequence(); // your existing image loop
-        if (overlayDashRef.current) {
-            overlayDashRef.current.reset();
-            overlayDashRef.current = null;
+        try {
+            console.log("handleAdVideoEnd");
+            setShowAdVideo(false);
+            if (overlayDashRef.current) {
+                overlayDashRef.current.reset();
+                overlayDashRef.current = null;
+            }
+            if (intervalSecondaryRef.current) {
+                clearInterval(intervalSecondaryRef.current);
+                intervalSecondaryRef.current = null;
+            }
+            console.log("showAdVideo: ", showAdVideo);
+        }
+        catch (error) {
+            console.log("handleAdVideoEnd: ", error);
         }
     };
 
+    // Handling the display ads on pause (full screen)
     const handleDisplayAds = async (url, seq) => {
         const fetchAndRenderAd = async (url1) => {
             try {
@@ -282,7 +303,6 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                     }
                     if (impressionTck !== '') {
                         getData(impressionTck);
-                        //console.log("Display Impression Sent");
                     }
                     // Get advertiser
                     const advElements = xmlDoc.getElementsByTagName("Advertiser");
@@ -333,9 +353,22 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
         }
     };
 
+    function timeStringToMilliseconds(timeStr) {
+        const [hms, ms = "0"] = timeStr.split('.');
+        const [hours, minutes, seconds] = hms.split(':').map(Number);
+        const milliseconds = Number(ms.padEnd(3, '0')); // ensures "2" becomes "200", "25" → "250"
+        return ((hours * 3600 + minutes * 60 + seconds) * 1000) + milliseconds;
+    }
+
+    // Handle the secondary video ad on pause
     const handleVideoAds = async (url, pos) => {
         try {
             const ret = await getVast(url);
+            let elements = [];
+            let e = {};
+            let ev = "";
+            let pts_ = 0;
+            let durationText = "";
             if (ret.status === 200) {
                 const xml = ret.data;
                 const parser = new DOMParser();
@@ -343,16 +376,48 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                 const mediaFiles = xmlDoc.getElementsByTagName("MediaFile");
                 const impressions = xmlDoc.getElementsByTagName("Impression");
                 const trackers = xmlDoc.getElementsByTagName("Tracking");
-                const errors = xmlDoc.getElementsByTagName("Error");
-                
+                const durations = xmlDoc.getElementsByTagName("Duration");
+
+                // Process Ad Server duration
+                durationText = durations[0].textContent.trim();
+                console.log("durationText: ", durationText);
+                // Process Ad Server DASH media file response
                 for (let i = 0; i < mediaFiles.length; i++){
                     const typeAttr = mediaFiles[i].getAttribute("type");
                     if (typeAttr === 'application/dash+xml') {
                         setAdVideoSRC(mediaFiles[i].textContent.trim());
-                        console.log("adVideoSRC: ", adVideoSRC);
+                        forceUpdate(n => n + 1);
                     }
                 }
-                //overlayAdRef.current.initialize(overlayAdRef.current, adVideoSRC, true, 0)
+                // Process Ad Server Impressions URLs
+                for (let i = 0; i < impressions.length; i++) {
+                    e = {pts: 0, url: impressions[i].textContent.trim(), reported: false}
+                    elements.push(e);
+                }
+                secondaryVideoImpressions.current = elements;
+                elements = [];
+                // Process Ad Server Tracker URLs
+                for (let i = 0; i < trackers.length; i++) {
+                    ev = trackers[i].getAttribute("event");
+                    switch (ev) {
+                        case "start":
+                            pts_ = 0;
+                        case "firstQuartile":
+                            pts_ = timeStringToMilliseconds(durationText) * 0.25;
+                        case "midpoint":
+                            pts_ = timeStringToMilliseconds(durationText) * 0.50;
+                        case "thirdQuartile":
+                            pts_ = timeStringToMilliseconds(durationText) * 0.75;
+                        case "complete":
+                            pts_ = timeStringToMilliseconds(durationText);
+                    }
+                    e = {event: ev, pts: pts_, url: trackers[i].textContent.trim(), reported: false}
+                    elements.push(e);
+                }
+                secondaryVideoTrackers.current = elements;
+                elements = [];
+                setShowAdVideo(true);
+                forceUpdate(n => n + 1);
             }
             else {
                 console.log("Problem on video ad decision: ", ret.status);
@@ -363,6 +428,7 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
         }        
     }
 
+    // Will handle the main player pause/play
     useEffect(() => {
         const videoEl = leftVideoRef.current;
         if (!videoEl) return;
@@ -396,7 +462,7 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                 }
             }
             // If the use case is playing a video during the pause 
-            else if (inAdPauseVideo) {
+            else if (inAdPauseVideo && toggleModeRef.current === 'start') {
                 displayAdDecision = `https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?transactionId=${timestamp}&deviceId=${did}&sessionId=${timestamp}&position=pre&kvp=language~heb&kvp=adForm~adPause`;
                 handleVideoAds(displayAdDecision, 'onPause');
             }
@@ -404,10 +470,22 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
         };
 
         const handlePlay = () => {
+            let displayAdDecision = ''
+            let did = window.crypto?.randomUUID?.() || Math.random().toString(36).substring(2);     
+            let timestamp = Date.now();
+            
             console.log('[Specials] Player resumed — hiding overlay');
             setOverlayVisible(false);
             setShowBlackCover(false);
-            setStreamTypeMsg('Content');
+
+            // If the use case is playing a video during the resume of a pause 
+            if (inAdPauseVideo && toggleModeRef.current === 'resume') {
+                displayAdDecision = `https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?transactionId=${timestamp}&deviceId=${did}&sessionId=${timestamp}&position=pre&kvp=language~heb&kvp=adForm~adPausePreRoll`;
+                handleVideoAds(displayAdDecision, 'onResume');
+            }
+            else {
+                setStreamTypeMsg('Content');
+            }
         };
 
         videoEl.addEventListener('pause', handlePause);
@@ -419,19 +497,53 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
         };
     }, []);
 
+    // To handle the secondary video timing for impressions and tracking events
+    const updateCurrentTimeSecondaryVideo = ()=> {
+        try {
+            let i = 0;
+            let tms = overlayDashRef.current?.time() * 1000;
+            //console.log("tms: ", tms);
+            if (secondaryVideoImpressions.current) {
+                //console.log("secondaryVideoImpressions.current.length", secondaryVideoImpressions.current.length);
+                for (i=0; i < secondaryVideoImpressions.current.length; i++) {
+                    //console.log("secondaryVideoImpressions.current[i]", secondaryVideoImpressions.current[i]);
+                    if (secondaryVideoImpressions.current[i].pts <= tms && !secondaryVideoImpressions.current[i].reported) {
+                        getData(secondaryVideoImpressions.current[i].url);
+                        //console.log("reported impression: ", secondaryVideoImpressions.current[i]?.url);
+                        secondaryVideoImpressions.current[i].reported = true;
+                    }
+                }
+            }
+            if (secondaryVideoTrackers.current) {
+                for (i=0; i < secondaryVideoTrackers.current.length; i++) {
+                    if (secondaryVideoTrackers.current[i].pts <= tms && !secondaryVideoTrackers.current[i].reported) {
+                        getData(secondaryVideoTrackers.current[i].url);
+                        //console.log("reported event: ", secondaryVideoTrackers.current[i]?.event, secondaryVideoTrackers.current[i]?.url);
+                        secondaryVideoTrackers.current[i].reported = true;
+                    }
+                }
+            }
+        }
+        catch (error) {
+            console.error('Error updateCurrentTimeSecondaryVideo:', error);
+        }
+    }
+
     // To handle the secondary video playback
     useEffect(() => {
-    if (showAdVideo && adVideoSRC && overlayAdRef.current) {
-        const player = dashjs.MediaPlayer().create();
-        player.updateSettings({
-        debug: { logLevel: dashjs.Debug.LOG_LEVEL_WARNING }
-        });
+        if (showAdVideo && adVideoSRC && overlayAdRef.current) {
+            const player = dashjs.MediaPlayer().create();
+            player.updateSettings({
+                debug: { logLevel: dashjs.Debug.LOG_LEVEL_WARNING }
+            });
 
-        player.initialize(overlayAdRef.current, adVideoSRC, true);
-        overlayDashRef.current = player;
-    }
+            player.initialize(overlayAdRef.current, adVideoSRC, true);
+            overlayDashRef.current = player;
+            overlayAdRef.current.muted = true;
+
+            intervalSecondaryRef.current = setInterval(updateCurrentTimeSecondaryVideo, (_INTERVAL_ / 2));
+        }
     }, [showAdVideo, adVideoSRC]);
-
 
     const buildTrackingEvents = (es, tevs, ind) => {
 
@@ -452,21 +564,16 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                 return;
             }
         }
-        //console.log("es: ", es);
         hasDisplay.current = false;
         sequence.current = '';
         displayAdURL.current = '';
-        //console.log("eventStreamTk: ", eventStreamTk);
         for (let i = 0; i < eventStreamTk.Event_asArray.length; i++){
             // set tracking events
             myURL = eventStreamTk.Event_asArray[i].Tracking_asArray[0].__cdata;        
-            //console.log(myURL);
             event = eventStreamTk.Event_asArray[i].Tracking_asArray[0].event;
             params = new URLSearchParams(myURL);
             adv = params.get("creativeId");
             if (event.includes('impression')) {
-                //console.log("event: ", event);
-                //console.log("myURL: ", myURL);
                 if (myURL.includes(".jpeg") || myURL.includes(".jpg") || myURL.includes(".png")) {
                     if (myURL.includes('adForm=overlay')){
                         hasDisplay.current = true;
@@ -638,7 +745,7 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
             if (inAdPauseVideo) {
                 console.log("leftVideoRef.current.currentTime: ", leftVideoRef.current.currentTime);
                 //resumeTime.current = leftVideoRef.current.currentTime;
-                console.log("resumeTime.current: ", resumeTime.current);
+                //console.log("resumeTime.current: ", resumeTime.current);
             }
         } else {
             const playLeft = leftVideoRef.current?.play();
@@ -701,8 +808,7 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
   
       const handleCT = (pl) => {
 
-            console.log("ClickThrough: ", pl);
-
+            ///console.log("ClickThrough: ", pl);
             const eventList = leftTrackingEventsRef.current;
             const currentStream = leftCurrentStream.current;
 
@@ -726,7 +832,6 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                 'Access-Control-Allow-Origin': '*',
                 'Content-Type':'application/json'
             }});
-            //console.log(response.data);
             return response;
         } catch (error) {
             console.error('Error posting data:', error);
@@ -758,6 +863,14 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                 leftVideoRef.current.volume = 0;
                 setLeftVolumeLabel("5%");
             }
+        }
+        if (overlayAdRef.current) {
+            if (leftVolumeLabel === "5%") {
+                overlayAdRef.current.volume = 0.05;
+                overlayAdRef.current.muted = false;
+            } else {
+                overlayAdRef.current.volume = 0;
+            }            
         }
     };
     
@@ -794,6 +907,27 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                                 </tr>
                             </tbody>
                         </table>
+                        <div className="flex items-center space-x-4 mt-4">
+                            <button
+                                onClick={() => {
+                                setIsStartSelected(true);
+                                toggleModeRef.current = "start";
+                                }}
+                                className={`px-4 py-2 rounded-full text-white ${isStartSelected ? 'bg-green-600' : 'bg-gray-400'}`}
+                            >
+                                Start
+                            </button>
+                            <button
+                                onClick={() => {
+                                setIsStartSelected(false);
+                                toggleModeRef.current = "resume";
+                                }}
+                                className={`px-4 py-2 rounded-full text-white ${!isStartSelected ? 'bg-green-600' : 'bg-gray-400'}`}
+                            >
+                                Resume
+                            </button>
+                        </div>
+                        <br />
                     </div>
                     <div style={{ position: 'relative', width: '750px', height: 'auto' }}> 
                         <video ref={leftVideoRef} controls preload="none" style={{ width: '100%', display: 'block' }} />
@@ -906,7 +1040,7 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                                         left: 0,
                                         width: '100%',
                                         height: '100%',
-                                        zIndex: 15,
+                                        zIndex: 7,
                                         backgroundColor: 'black'
                                     }}
                                 />

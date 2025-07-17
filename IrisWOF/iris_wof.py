@@ -140,6 +140,14 @@ def quickset():
         manual_inputs["inESAMIP"].insert(0, "23.129.240.38")
         manual_inputs["inESAMPORT"].delete(0, tk.END)
         manual_inputs["inESAMPORT"].insert(0, "8105")
+    elif current == '2':
+        btQuickset["text"] = '3'
+        manual_inputs["inESAMAP"].delete(0, tk.END)
+        manual_inputs["inESAMAP"].insert(0, "APCL1")
+        manual_inputs["inESAMIP"].delete(0, tk.END)
+        manual_inputs["inESAMIP"].insert(0, "192.168.1.101")
+        manual_inputs["inESAMPORT"].delete(0, tk.END)
+        manual_inputs["inESAMPORT"].insert(0, "9100")
     else:
         btQuickset["text"] = '..'
         manual_inputs["inESAMAP"].delete(0, tk.END)
