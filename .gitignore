@@ -26,7 +26,12 @@ yarn-debug.log*
 yarn-error.log*
 
 #files
-*.json
+package-lock.json
+/public/data.json
+/others/demotnscripts/input.ini.json
+/others/demotnscripts/output.ini.json
+/src/old/*.json
+/cors-proxy/*.*
 *.jsonl
 *.key
 *.log

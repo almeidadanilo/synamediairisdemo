@@ -4,6 +4,7 @@ import axios from 'axios';
 import dt from './data.json';
 import { use } from 'react';
 
+// Specials - Component for VOD ad on pause and ad overlay Demo Use Cases
 
 const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVideo}) => {
     const [, forceUpdate] = useState(0);

@@ -6,6 +6,7 @@ import About from './About';
 import Menu from './Menu';
 import Vod from './vod';
 import Linear from './linear';
+import LinearCC from './linear_cc';
 import LandingPage from './LandingPage';
 import Specials from './Specials';
 
@@ -34,6 +35,7 @@ function App() {
             <Route path="/specials1" element={<Specials input_index = {11} inAdPause = {true} inSequence = {'seq1'} inAdOverlay = {false} />} />
             <Route path="/specials2" element={<Specials input_index = {12} inAdPause = {false} inSequence = {''} inAdOverlay = {true} />} />
             <Route path="/specials3" element={<Specials input_index = {14} inAdPause = {false} inSequence = {''} inAdOverlay = {false} inAdPauseVideo = {true} />} />
+            <Route path='/linearcc1' element={<LinearCC input_index = {15}/>} />
             <Route path="/landing" element={<LandingPage />} />
           </Routes>
         </div>

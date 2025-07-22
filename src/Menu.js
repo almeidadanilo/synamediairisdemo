@@ -100,19 +100,24 @@ function Menu() {
             <ul className="absolute bg-gray-700 mt-2 rounded shadow-lg min-w-[200px] whitespace-nowrap z-50">
               <li key="1">
                 <Link to="/specials1" className="block px-4 py-2 hover:bg-gray-600" onClick={closeMenus}>
-                  VOD Pause Ads
+                  {data.vod[11].menu_title}
                 </Link>
               </li>
               <li key="2">
                 <Link to="/specials2" className="block px-4 py-2 hover:bg-gray-600" onClick={closeMenus}>
-                  VOD Ad Video + Overlay
+                  {data.vod[12].menu_title}
                 </Link>
               </li>   
               <li key="3">
                 <Link to="/specials3" className="block px-4 py-2 hover:bg-gray-600" onClick={closeMenus}>
-                  VOD Ad Video + Video Pause Ads
+                  {data.vod[14].menu_title}
                 </Link>
-              </li>                              
+              </li>
+              <li key="4">
+                <Link to="/linearcc1" className="block px-4 py-2 hover:bg-gray-600" onClick={closeMenus}>
+                  {data.vod[15].menu_title}
+                </Link>
+              </li>                         
             </ul>
           )}
         </li>

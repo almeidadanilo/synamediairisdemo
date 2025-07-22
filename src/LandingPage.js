@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
+// Component for "special" click-through land page with the image capture from Iris Wheel of Fortune
+
 const LandingPage = () => {
     const location = useLocation();
     const params = new URLSearchParams(location.search);

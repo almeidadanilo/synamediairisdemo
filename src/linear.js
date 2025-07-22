@@ -3,6 +3,8 @@ import dashjs from 'dashjs';
 import axios from 'axios';
 import dt from './data.json';
 
+// Linear - component for linear content with SCTE35 on demand Demo Use Cases
+
 const Linear = ({input_index}) => {
     const [, forceUpdate] = useState(0);
     const leftVideoRef = useRef(null);
@@ -660,6 +662,7 @@ const Linear = ({input_index}) => {
         }
     };
 
+    // Straight click will action on ad-server URL set for the click-through
     const handleLeftClick = () => {
         console.log("Normal click behavior triggered (left)");
 
@@ -680,6 +683,7 @@ const Linear = ({input_index}) => {
         }        
     };
 
+    // Straight click will action on ad-server URL set for the click-through
     const handleRightClick = () => {
         console.log("Normal click behavior triggered (right)");
         const eventList = rightTrackingEventsRef.current;
@@ -699,6 +703,7 @@ const Linear = ({input_index}) => {
         }        
     };    
 
+    // Click and hold will action on the "special" local landpage, loading the image captured from IrisWOF.py
     const handleLeftClickHold = () => {
         console.log("Click-and-hold behavior triggered (left)");
 
@@ -720,7 +725,8 @@ const Linear = ({input_index}) => {
             console.log('No clickthrough URL found for L');
         }         
     };
-
+    
+    // Click and hold will action on the "special" local landpage, loading the image captured from IrisWOF.py
     const handleRightClickHold = () => {
         console.log("Click-and-hold behavior triggered (right)");
 
@@ -777,7 +783,15 @@ const Linear = ({input_index}) => {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <div>
-                    <h2>{dt.vod[input_index].left_title} & {dt.vod[input_index].left_segment} </h2>
+                    <h2>{dt.vod[input_index].left_title} & {dt.vod[input_index].left_segment}
+                        {dt.vod[input_index].left_flag !== '' && (
+                            <img
+                                src={dt.vod[input_index].left_flag}
+                                alt="Left Flag"
+                                style={{ width: '50px', height: '25px', objectFit: 'contain' }}
+                            />
+                        )}
+                    </h2>
                     <label>Stream Type: <b>{leftStreamIsAd ? ' :: AD :: ' + leftCurrentAdvert : 'Content'}</b></label><br/>
                     <div>
                         <table className="w-full text-sm text-left text-gray-700 border border-gray-200">
@@ -808,7 +822,15 @@ const Linear = ({input_index}) => {
                     </div>
                 </div>
                 <div>
-                    <h2>{dt.vod[input_index].right_title} & {dt.vod[input_index].right_segment} </h2>
+                    <h2>{dt.vod[input_index].right_title} & {dt.vod[input_index].right_segment}
+                        {dt.vod[input_index].right_flag !== '' && (
+                            <img
+                                src={dt.vod[input_index].right_flag}
+                                alt="Right Flag"
+                                style={{ width: '50px', height: '25px', objectFit: 'contain' }}
+                            />
+                        )}                    
+                    </h2>
                     <label>Stream Type: <b>{rightStreamIsAd ? ' :: AD :: ' + rightCurrentAdvert : 'Content'}</b></label><br/>
                     <div>
                         <table className="w-full text-sm text-left text-gray-700 border border-gray-200">

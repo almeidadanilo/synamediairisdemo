@@ -3,9 +3,9 @@ import dashjs from 'dashjs';
 import axios from 'axios';
 import dt from './data.json';
 
-// Vod - Component for Video on Demand pre/mid/post roll Demo Use Cases
+// LinearCC - Component for Channel Change and POI (DAI) CSAI Demo Use Cases
 
-const Vod = ({input_index}) => {
+const LinearCC = ({input_index}) => {
     const [, forceUpdate] = useState(0);
     const leftVideoRef = useRef(null);
     const rightVideoRef = useRef(null);
@@ -13,13 +13,13 @@ const Vod = ({input_index}) => {
     const intervalRightRef = useRef(null);
     const leftPlayer = useRef(null);
     const rightPlayer = useRef(null);
-    //const playersInitialized = useRef(false);
     const leftCTEnabledRef = useRef(false);
     const rightCTEnabledRef = useRef(false);
+    const channelID = useRef(1);
     const [leftUrl, setLeftUrl] = useState((dt.vod[input_index].left_playback_url));
     const [rightUrl, setRightUrl] = useState((dt.vod[input_index].right_playback_url));
     const [leftVolumeLabel, setLeftVolumeLabel] = useState("5%");
-    const [rightVolumeLabel, setRightVolumeLabel] = useState("5%");    
+    const [rightVolumeLabel, setRightVolumeLabel] = useState("5%");
     const leftCurrentStream = useRef("");
     const rightCurrentStream = useRef("");  
     const leftStreamIsAdRef = useRef(false);
@@ -50,7 +50,11 @@ const Vod = ({input_index}) => {
       completion: ''
     });
     const _INTERVAL_ = 1000;
-
+    const holdThreshold = 1000; // milliseconds
+    //let leftClickHoldTimer = null;
+    let leftClickStartTime = null;
+    //let rightClickHoldTimer = null;
+    let rightClickStartTime = null;
 
     useEffect(() => {
         // Start left timer
@@ -84,14 +88,15 @@ const Vod = ({input_index}) => {
                 rightVideoRef.current.load();
             }                 
             if (leftPlayer.current) {
+                leftPlayer.current.off(dashjs.MediaPlayer.events.ERROR);
                 leftPlayer.current.reset();
-                leftPlayer.current = null;
             }
 
             if (rightPlayer.current) {
+                rightPlayer.current.off(dashjs.MediaPlayer.events.ERROR);
                 rightPlayer.current.reset();
-                rightPlayer.current = null;
             }
+
         };
     }, []); // <-- run once on mount
 
@@ -127,8 +132,8 @@ const Vod = ({input_index}) => {
         } else {
           setRightCurrentAdvert('');
         }
-    }, [rightTrackingEvents, rightStreamIsAd, rightCurrentStream.current]); 
-
+    }, [rightTrackingEvents, rightStreamIsAd, rightCurrentStream.current]);
+      
     const updateCurrentTimeLeft = () => {
         
         let pl = leftPlayer.current;
@@ -173,10 +178,20 @@ const Vod = ({input_index}) => {
 
     const initializePlayers = () => {
 
-        console.log('(VOD) initializePlayers() called.');
+        console.log('(LIN) initializePlayers() called.');
 
         leftPlayer.current = dashjs.MediaPlayer().create();
         leftPlayer.current.updateSettings({
+            /*streaming: {
+                delay: {
+                    liveDelay: 5
+                },
+                abr: {
+                    initialBitrate: {
+                        video: 500
+                    }
+                }
+            },*/            
             /*
             dashjs.Debug.LOG_LEVEL_NONE       // No logs
             dashjs.Debug.LOG_LEVEL_FATAL      // Only fatal errors
@@ -189,38 +204,58 @@ const Vod = ({input_index}) => {
               logLevel: dashjs.Debug.LOG_LEVEL_NONE // or LOG_LEVEL_ERROR to keep only serious errors
             }
         });
-        //leftPlayer.current.initialize(leftVideoRef.current, buildURL(leftUrl, 'l'), false, 0);
-        leftPlayer.current.initialize(leftVideoRef.current, '', false, 0);
+        leftPlayer.current.initialize(leftVideoRef.current, buildURL(leftUrl, 'l'), true, 0);
         leftVideoRef.current.muted = true;
-        console.log('(VOD) initialize LP');
+        console.log('(LIN) initialize LP');
 
         rightPlayer.current = dashjs.MediaPlayer().create();
-        rightPlayer.current.updateSettings({           
+        rightPlayer.current.updateSettings({       
+            streaming: {
+                delay: {
+                    liveDelay: 5
+                },
+                abr: {
+                    initialBitrate: {
+                        video: 500
+                    }
+                }
+            },                   
             debug: {
               logLevel: dashjs.Debug.LOG_LEVEL_NONE
             }
         });
-        //rightPlayer.current.initialize(rightVideoRef.current, buildURL(rightUrl, 'r'), false, 0);
-        rightPlayer.current.initialize(rightVideoRef.current, '', false, 0);
+        rightPlayer.current.initialize(rightVideoRef.current, buildURL(rightUrl, 'r'), true, 0);
         rightVideoRef.current.muted = true;
-        console.log('(VOD) initialize RP');
+        console.log('(LIN) initialize RP');
 
         // Set the intervals
         intervalLeftRef.current = setInterval(updateCurrentTimeLeft, _INTERVAL_);
-        //console.log('setIntervalLeft() ' + intervalLeftRef.current);
+        console.log('setIntervalLeft() ' + intervalLeftRef.current);
         intervalRightRef.current = setInterval(updateCurrentTimeRight, _INTERVAL_);
-        //console.log('setIntervalRight() ' + intervalRightRef.current);
+        console.log('setIntervalRight() ' + intervalRightRef.current);
         ///////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////
+        // Handle HTTP errors
+        const handleDashError = (e) => {
+            const httpStatus = e?.event?.response?.status;
+            console.warn('[Dash Error]', httpStatus, e);
+            if ([401, 403, 404].includes(httpStatus)) {
+                console.warn(`[Dash Error] Triggering reinitialization due to HTTP ${httpStatus}`);
+                handleReinitialize();
+            }
+        };
 
+        leftPlayer.current.on(dashjs.MediaPlayer.events.ERROR, handleDashError);
+        rightPlayer.current.on(dashjs.MediaPlayer.events.ERROR, handleDashError);
+        ///////////////////////////////////////////////////////////////////////////
         // Wait until manifest is fully loaded before setting tracking logic
         leftPlayer.current.on(dashjs.MediaPlayer.events.MANIFEST_LOADED, () => {
-            //console.log('(VOD) Left manifest loaded — safe to proceed');
+            //console.log('(LIN) Left manifest loaded — safe to proceed');
             leftPlayer.current.on(dashjs.MediaPlayer.events.PERIOD_SWITCH_STARTED, (e) => {
-                //console.log("LP >> Period Switch Started: ", e);
+
             });
 
             leftPlayer.current.on(dashjs.MediaPlayer.events.STREAM_ACTIVATED, (e) => {
-                //console.log("LP >> Stream Activated: ", e);
                 ////////////////////////////////////////////////////////////////////////////
                 const newId = e.streamInfo?.id;
                 if (!newId) return;
@@ -232,23 +267,19 @@ const Vod = ({input_index}) => {
                 }
 
                 leftCurrentStream.current = newId;
-                //console.log("leftCurrentStream.current: ", leftCurrentStream.current);
                 ////////////////////////////////////////////////////////////////////////////
                 const mpd = leftPlayer.current.getDashAdapter()?.getMpd();
                 if (!mpd) return;
-                
+              
                 const result = checkIfAd(mpd, newId);
-                
+              
                 if (result.isAd) {
                     setLeftTrackingEvents(result.events);
                     setleftStreamIsAd(true);
-
                     forceUpdate(n => n + 1);
-
                     const hasCT = result.events.some(ev => ev.type === 'clicktrough' && ev.ct);
-                    
+                    //console.log("Left Player HasCT: ", hasCT);
                     leftCTEnabledRef.current = hasCT;
-
                     forceUpdate(n => n + 1);
                 } else {
                     setLeftTrackingEvents([]);
@@ -273,7 +304,7 @@ const Vod = ({input_index}) => {
                 const previousId = rightCurrentStream.current;
             
                 if (previousId && previousId !== newId && rightStreamIsAdRef.current) {
-                    resetTrackingLabels('l');
+                    resetTrackingLabels('r');
                 }
 
                 rightCurrentStream.current = newId;
@@ -288,12 +319,9 @@ const Vod = ({input_index}) => {
                 if (result.isAd) {
                     setRightTrackingEvents(result.events);
                     setrightStreamIsAd(true);
-                    
                     forceUpdate(n => n + 1);
-
                     const hasCT = result.events.some(ev => ev.type === 'clicktrough' && ev.ct);
                     rightCTEnabledRef.current = hasCT;
-
                     forceUpdate(n => n + 1);
                 } else {
                     setRightTrackingEvents([]);
@@ -307,65 +335,31 @@ const Vod = ({input_index}) => {
 
     useEffect(() => {
         
-        console.log("enter cleaning");
+        //initializePlayers();
 
-        // Cleanup
-        if (leftPlayer.current) {
-            leftPlayer.current.reset();
-            leftPlayer.current = null;
-        }
-        if (rightPlayer.current) {
-            rightPlayer.current.reset();
-            rightPlayer.current = null;
-        }
+    }, [leftUrl,rightUrl]);
 
-        if (leftVideoRef.current) {
-            leftVideoRef.current.pause();
-            leftVideoRef.current.removeAttribute('src');
-            leftVideoRef.current.load();
-        }
+    useEffect(() => {
 
-        if (rightVideoRef.current) {
-            rightVideoRef.current.pause();
-            rightVideoRef.current.removeAttribute('src');
-            rightVideoRef.current.load();
-        }
-
-        clearInterval(intervalLeftRef.current);
-        clearInterval(intervalRightRef.current);
-        intervalLeftRef.current = null;
-        intervalRightRef.current = null;
-
-        // Now reinitialize
-        initializePlayers();
-
-    }, [input_index]);
+    });
   
-    const buildTrackingEvents = (es, tevs, ind) => {
+    const buildTrackingEvents = (es, tevs, ind, eventStreamTk, eventStreamCt) => {
 
         let te = '';
         let myURL = '';
         let teType = '';
         let adv = '';
+        let ctURL = ''
         let params = [];
         let event = '';
-        let eventStreamTk;
-        let eventStreamCt;
         
-        // Get the EvenStream for the Trackers 
-        eventStreamTk = es.find((stream) => stream.value === 'com.synamedia.dai.tracking.v2');
-        if (!eventStreamTk) {
-            eventStreamTk = es.find((stream) => stream.value === 'com.synamedia.dai.tracking');
-            if (!eventStreamTk) {
-                return;
-            }
-        }
-        //console.log("eventStreamTk: ", eventStreamTk);
+        //console.log(es);
         for (let i = 0; i < eventStreamTk.Event_asArray.length; i++){
-            // set tracking events
+            // set tracking events        
+            //myURL = decodeBase64(es.Event_asArray[i].Binary_asArray[0].__text);
             myURL = eventStreamTk.Event_asArray[i].Tracking_asArray[0].__cdata;
-            //console.log(myURL);
             event = eventStreamTk.Event_asArray[i].Tracking_asArray[0].event;
+            //console.log(myURL);
             params = new URLSearchParams(myURL);
             adv = params.get("creativeId");
             if (event.includes('impression')) {
@@ -381,7 +375,6 @@ const Vod = ({input_index}) => {
             } else if (event.includes('complete')) {
                 teType = 'Fourth Quartile';
             } else {
-                console.log("event: ", event);
                 teType = 'Unkknown';
             }                      
             te = {stream:i, id:ind, pt: eventStreamTk.Event_asArray[i].presentationTime, type: teType, url: myURL, reported: false, advert: adv, ct: ''};
@@ -390,53 +383,55 @@ const Vod = ({input_index}) => {
         }
 
         // Get the EventStream for click-through
-        eventStreamCt = es.find((stream) => stream.value === 'com.synamedia.dai.videoclick.v2');
-        if (!eventStreamCt) {
-            return;
-        }
+        if (!eventStreamCt) { return; }
         //console.log("eventStreamCt", eventStreamCt);
         for (let u = 0; u < eventStreamCt.Event_asArray.length; u++) {
             myURL = eventStreamCt.Event_asArray[u].VideoClicks_asArray[0].ClickTracking_asArray[0];
             //console.log("myURL: ", myURL);
-            adv = eventStreamCt.Event_asArray[u].VideoClicks_asArray[0].ClickThrough_asArray[0];
-            te = {stream:ind, id:ind, pt: 0, type: 'clicktrough', url: myURL, reported: false, advert: '', ct: adv};
+            ctURL = eventStreamCt.Event_asArray[u].VideoClicks_asArray[0].ClickThrough_asArray[0];
+            te = {stream:ind, id:ind, pt: 0, type: 'clicktrough', url: myURL, reported: false, advert: adv, ct: ctURL};
+            //console.log(te);
             tevs.push(te);
-        }
+        }        
     }
 
 
     const checkIfAd = (mpd, activeStreamId) => {
-
-        //console.log("mpd: ", mpd);
-        
         let ret = false;
         let events = [];
-        
+      
         const manifest = mpd?.manifest;
         const periods = manifest?.Period_asArray || [];
-        const number = parseInt(activeStreamId.split('_')[1], 10);
+    
+        //console.log("manifest", manifest);
 
         // Find the current period by ID
-        const currentPeriod = periods[number];
-        //console.log ("currentPeriod: ", currentPeriod, number);
+        const currentPeriod = periods.find(p => p?.id === activeStreamId);
         if (!currentPeriod) return { isAd: false, events };
         
-        //console.log("Periods: ", periods);
-        //console.log ("activeStreamId: ", activeStreamId);
+        //console.log("manifest", manifest);
+        //console.log("periods", periods);
+        //console.log("currentPeriod", currentPeriod);
+        //console.log("activeStreamId", activeStreamId);
 
         // Check if it has a tracking EventStream
-        if (currentPeriod && currentPeriod['dai:adPeriod']) {
-            const eventStream = currentPeriod.EventStream_asArray;
-            ret = true;
-            //console.log("EventStream: ", eventStream);
-            buildTrackingEvents(eventStream, events, activeStreamId);
+        //const eventStream = currentPeriod.EventStream_asArray?.[0];
+        if (!currentPeriod.EventStream_asArray) return { isAd: false, events };
 
-            //console.log("events: ", events);
+        const eventStreamTk = currentPeriod.EventStream_asArray.find(e => e?.value === "com.synamedia.dai.tracking.v2");
+        const eventStreamCT = currentPeriod.EventStream_asArray.find(e => e?.value === "com.synamedia.dai.videoclick.v2");
+        //const eventStream = null;
+        //console.log("eventStreamTk", eventStreamTk);
+        //if (eventStream?.value === "com.synamedia.dai.tracking.v2") {
+        if (eventStreamTk) {
+            ret = true;
+            //console.log("buildTrackingEvents", eventStreamTk, events, currentPeriod.id);
+            buildTrackingEvents(null, events, currentPeriod.id, eventStreamTk, eventStreamCT);
         }
-        
+      
         return { isAd: ret, events };        
     }
-
+    
     function generateUUID() {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
             const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
@@ -450,10 +445,12 @@ const Vod = ({input_index}) => {
         //let did = window.crypto?.randomUUID?.() || Math.random().toString(36).substring(2);
         let did = generateUUID();
 
-        //console.log("did=", did);
+        //console.log("did=", did);        
         str = url + '&sessionId=SYNAIRISDEMO_' + pl + '_' + input_index.toString() + '_' + (Math.floor(new Date().getTime() / 1000).toString());
         str = str + '&deviceId=' + did
-        
+
+        console.log("buildURL: ", str);
+
         return str;
     };
   
@@ -466,38 +463,36 @@ const Vod = ({input_index}) => {
             //console.log('id --> ', id);
             if (trackingEvents[q]?.id === id) {
                 if ((tm >= trackingEvents[q]?.pt) && (!trackingEvents[q]?.reported)) {
-                    if (trackingEvents[q].type !== 'clicktrough') {
-                        console.log('HTTP GET: ' + pl + ' - ' + trackingEvents[q].advert + ' - ' + trackingEvents[q].type + ' - ', trackingEvents[q].url);
-                        getData(trackingEvents[q].url);
-                        trackingEvents[q].reported = true;
-                        // Update the corresponding label
-                        setTrackingLabels((prevLabels) => {
-                            const newLabels = { ...prevLabels };
-                            switch (trackingEvents[q].type) {
-                                case 'Impression':
-                                    newLabels.impression = '✔';
-                                    break;
-                                case 'Ad Start':
-                                    newLabels.adstart = '✔';
-                                    break;
-                                case 'First Quartile':
-                                    newLabels.firstQuartile = '✔';
-                                    break;
-                                case 'Second Quartile':
-                                    newLabels.secondQuartile = '✔';
-                                    break;
-                                case 'Third Quartile':
-                                    newLabels.thirdQuartile = '✔';
-                                    break;
-                                case 'Fourth Quartile':
-                                    newLabels.completion = '✔';
-                                    break;
-                                    default:
-                                break;
-                            }
-                            return newLabels;
-                        });
+                    console.log('HTTP GET: ' + pl + ' - ' + trackingEvents[q].advert + ' - ' + trackingEvents[q].type + ' - ', trackingEvents[q].url);
+                    getData(trackingEvents[q].url);
+                    trackingEvents[q].reported = true;
+                    // Update the corresponding label
+                    setTrackingLabels((prevLabels) => {
+                    const newLabels = { ...prevLabels };
+                    switch (trackingEvents[q].type) {
+                        case 'Impression':
+                            newLabels.impression = '✔';
+                            break;
+                        case 'Ad Start':
+                            newLabels.adstart = '✔';
+                            break;
+                        case 'First Quartile':
+                            newLabels.firstQuartile = '✔';
+                            break;
+                        case 'Second Quartile':
+                            newLabels.secondQuartile = '✔';
+                            break;
+                        case 'Third Quartile':
+                            newLabels.thirdQuartile = '✔';
+                            break;
+                        case 'Fourth Quartile':
+                            newLabels.completion = '✔';
+                            break;
+                            default:
+                        break;
                     }
+                    return newLabels;
+                });
                 }
             }
         }
@@ -564,40 +559,9 @@ const Vod = ({input_index}) => {
                 intervalRightRef.current = null;
             }
         } else {
-            /*
-            console.log("A");
-            console.log(leftPlayer.current);
-            if (!leftPlayer.current?.getSource()) {
-                console.log("B");
-                leftPlayer.current.initialize(leftVideoRef.current, buildURL(leftUrl, 'l'), true);
-                console.log("C");
-            }
-            if (!rightPlayer.current?.getSource()) {
-                rightPlayer.current.initialize(leftVideoRef.current, buildURL(rightUrl, 'l'), false);
-            }*/
-
-            const playLeft = leftVideoRef.current?.play();
-            const playRight = rightVideoRef.current?.play();
-
-            // Catch abort errors
-            if (playLeft?.catch) {
-                playLeft.catch((e) => {
-                    if (e.name !== 'AbortError') {
-                        console.error('leftVideo play error:', e);
-                    }
-                });
-            }
-
-            if (playRight?.catch) {
-                playRight.catch((e) => {
-                    if (e.name !== 'AbortError') {
-                        console.error('rightVideo play error:', e);
-                    }
-                });
-            }
-
+            leftVideoRef.current.play();
+            rightVideoRef.current.play();
             setIsPlaying(true);
-
             if (!intervalLeftRef.current) {
                 intervalLeftRef.current = setInterval(updateCurrentTimeLeft, _INTERVAL_);
             }
@@ -635,54 +599,28 @@ const Vod = ({input_index}) => {
             intervalRightRef.current = null;
         }
 
-        if (leftVideoRef.current) {
-            leftVideoRef.current.pause();
-            leftVideoRef.current.removeAttribute('src');
-            leftVideoRef.current.load();
+        if (leftPlayer && rightPlayer) {
+            // Stop and reset Dash.js players
+            leftPlayer.current.reset();
+            rightPlayer.current.reset();
         }
-
-        if (rightVideoRef.current) {
+    
+        if (leftVideoRef.current && rightVideoRef.current) {
+            // Pause and clear video sources
+            leftVideoRef.current.pause();
+            leftVideoRef.current.removeAttribute('src'); // Remove the source
+            leftVideoRef.current.load(); // Force reload (to fully clear)
+            
             rightVideoRef.current.pause();
             rightVideoRef.current.removeAttribute('src');
             rightVideoRef.current.load();
         }
-
-        if (leftPlayer.current) {
-            leftPlayer.current.reset();
-        }
-        if (rightPlayer.current) {
-            rightPlayer.current.reset();
-        }
-
+    
+        // Reset any tracking states and variables
         setIsPlaying(false);
-        resetTrackingLabels('rl');
-        
-        leftCTEnabledRef.current = false;
-        rightCTEnabledRef.current = false;
-
+        resetTrackingLabels();        
       };
   
-      const handleCT = (pl) => {
-
-            console.log("ClickThrough: ", pl);
-
-            const eventList = pl === 'l' ? leftTrackingEventsRef.current : rightTrackingEventsRef.current;
-            const currentStream = pl === 'l' ? leftCurrentStream.current : rightCurrentStream.current;
-
-            const ctEvent = eventList.find(ev => ev.id === currentStream && ev.type === 'clicktrough' && ev.ct) || eventList.find(ev => ev.type === 'clicktrough' && ev.ct);
-
-            if (ctEvent) {
-                // Action the Ad Click
-                window.open(ctEvent.ct, '_blank');
-                // Report the Ad Click
-                console.log('HTTP GET: ' + pl + ' - ' + ctEvent.advert + ' - ' + ctEvent.type + ' - ', ctEvent.url);
-                getData(ctEvent.url);                
-            } 
-            else {
-                console.log('No clickthrough URL found for', pl);
-            }
-      }
-
       const getData = async (url) => {
         try {
             const response = await axios.get(url, {headers:{
@@ -693,10 +631,119 @@ const Vod = ({input_index}) => {
             return response.status;
         } catch (error) {
             console.error('Error posting data:', error);
-            return  -1;
+            return -1;
         }
-      };
-    
+      };    
+
+    const handleLeftMouseDown = () => {
+        leftClickStartTime = new Date().getTime();
+    };
+
+    const handleRightMouseDown = () => {
+        rightClickStartTime = new Date().getTime();
+    };    
+
+    const handleLeftMouseUp = () => {
+        const heldDuration = new Date().getTime() - leftClickStartTime;
+        if (heldDuration < holdThreshold) {
+            handleLeftClick();      
+        } else {
+            handleLeftClickHold();
+        }
+    };
+
+    const handleRightMouseUp = () => {
+        const heldDuration = new Date().getTime() - rightClickStartTime;
+        if (heldDuration < holdThreshold) {
+            handleRightClick();      
+        } else {
+            handleRightClickHold();
+        }
+    };
+
+    const handleLeftClick = () => {
+        console.log("Normal click behavior triggered (left)");
+
+        const eventList = leftTrackingEventsRef.current;
+        const currentStream = leftCurrentStream.current;
+
+        const ctEvent = eventList.find(ev => ev.id === currentStream && ev.type === 'clicktrough' && ev.ct) || eventList.find(ev => ev.type === 'clicktrough' && ev.ct);
+
+        if (ctEvent) {
+            // Action the Ad Click
+            window.open(ctEvent.ct, '_blank');
+            // Report the Ad Click
+            console.log('HTTP GET: L - ' + ctEvent.advert + ' - ' + ctEvent.type + ' - ', ctEvent.url);
+            getData(ctEvent.url);                
+        } 
+        else {
+            console.log('No clickthrough URL found for L');
+        }        
+    };
+
+    const handleRightClick = () => {
+        console.log("Normal click behavior triggered (right)");
+        const eventList = rightTrackingEventsRef.current;
+        const currentStream = rightCurrentStream.current;
+
+        const ctEvent = eventList.find(ev => ev.id === currentStream && ev.type === 'clicktrough' && ev.ct) || eventList.find(ev => ev.type === 'clicktrough' && ev.ct);
+
+        if (ctEvent) {
+            // Action the Ad Click
+            window.open(ctEvent.ct, '_blank');
+            // Report the Ad Click
+            console.log('HTTP GET: R - ' + ctEvent.advert + ' - ' + ctEvent.type + ' - ', ctEvent.url);
+            getData(ctEvent.url);                
+        } 
+        else {
+            console.log('No clickthrough URL found for R');
+        }        
+    };    
+
+    const handleLeftClickHold = () => {
+        console.log("Click-and-hold behavior triggered (left)");
+
+        const eventList = leftTrackingEventsRef.current;
+        const currentStream = leftCurrentStream.current;
+        let url = '';
+
+        const ctEvent = eventList.find(ev => ev.id === currentStream && ev.type === 'clicktrough' && ev.ct) || eventList.find(ev => ev.type === 'clicktrough' && ev.ct);
+
+        if (ctEvent) {
+            // Action the Ad Click
+            url = 'http://localhost:3000/landing?assetId=' + ctEvent.advert
+            window.open(url, '_blank');
+            // Report the Ad Click
+            console.log('HTTP GET: L - ' + ctEvent.advert + ' - ' + ctEvent.type + ' - ', url);
+            getData(ctEvent.url);                
+        } 
+        else {
+            console.log('No clickthrough URL found for L');
+        }         
+    };
+
+    const handleRightClickHold = () => {
+        console.log("Click-and-hold behavior triggered (right)");
+
+        const eventList = rightTrackingEventsRef.current;
+        const currentStream = rightCurrentStream.current;
+        let url = '';
+
+        const ctEvent = eventList.find(ev => ev.id === currentStream && ev.type === 'clicktrough' && ev.ct) || eventList.find(ev => ev.type === 'clicktrough' && ev.ct);
+
+        if (ctEvent) {
+            // Action the Ad Click
+            url = 'http://localhost:3000/landing?assetId=' + ctEvent.advert
+            window.open(url, '_blank');
+            // Report the Ad Click
+            console.log('HTTP GET: R - ' + ctEvent.advert + ' - ' + ctEvent.type + ' - ', url);
+            getData(ctEvent.url);                
+        } 
+        else {
+            console.log('No clickthrough URL found for R');
+        }           
+    };
+
     const handleToggleLeftVolume = () => {
         if (leftVideoRef.current) {
             if (leftVolumeLabel === "5%") {
@@ -723,28 +770,25 @@ const Vod = ({input_index}) => {
         }
     };
 
-    const handleSkipToPostroll = () => {
+    const handleChannelChange = (option) => {
+        console.log("handleChannelChange");
         try {
-            const offset = parseFloat(dt.vod[input_index].postroll_offset);
-            if (isNaN(offset) || offset === 0) {
-                console.warn("Invalid postroll offset");
-                return;
+            let ch = channelID.current;
+            if (option === 'up') {
+                channelID.current = ch >= dt.vod[input_index].max_channels ? 1 : ch + 1;
             }
-
-            if (leftPlayer.current) {
-                leftPlayer.current.seek(offset);
+            else {
+                channelID.current = ch >= dt.vod[input_index].max_channels ? 1 : ch - 1;
             }
-
-            if (rightPlayer.current) {
-                rightPlayer.current.seek(offset);
-            }
-
-            console.log(`Skipped both players to ${offset} seconds`);
-        } catch (error) {
-            console.error("Failed to skip to postroll:", error);
+            //setLeftUrl(dt.vod[input_index].left_playback_url_1);
+            //setRightUrl(dt.vod[input_index].right_playback_url_1);
+            console.log("channelID.current: ", channelID.current);
+        }
+        catch (error) {
+            console.error('Error handling channel change:', error);
         }
     };
-
+    
     return (
         <div>
             <div>
@@ -759,7 +803,7 @@ const Vod = ({input_index}) => {
                                 alt="Left Flag"
                                 style={{ width: '50px', height: '25px', objectFit: 'contain' }}
                             />
-                        )}
+                        )}                    
                     </h2>
                     <label>Stream Type: <b>{leftStreamIsAd ? ' :: AD :: ' + leftCurrentAdvert : 'Content'}</b></label><br/>
                     <div>
@@ -787,18 +831,18 @@ const Vod = ({input_index}) => {
                         </table>
                     </div>                     
                     <div> 
-                      <video ref={leftVideoRef} controls preload="none" style={{ width: '750px' }} />
+                      <video ref={leftVideoRef} controls style={{ width: '750px' }} />
                     </div>
                 </div>
                 <div>
-                    <h2>{dt.vod[input_index].right_title} & {dt.vod[input_index].right_segment} 
+                    <h2>{dt.vod[input_index].right_title} & {dt.vod[input_index].right_segment}
                         {dt.vod[input_index].right_flag !== '' && (
                             <img
                                 src={dt.vod[input_index].right_flag}
                                 alt="Right Flag"
                                 style={{ width: '50px', height: '25px', objectFit: 'contain' }}
                             />
-                        )}
+                        )}                    
                     </h2>
                     <label>Stream Type: <b>{rightStreamIsAd ? ' :: AD :: ' + rightCurrentAdvert : 'Content'}</b></label><br/>
                     <div>
@@ -826,12 +870,12 @@ const Vod = ({input_index}) => {
                         </table>
                     </div>                    
                     <div>
-                      <video ref={rightVideoRef} controls preload="none" style={{ width: '750px' }} />
+                      <video ref={rightVideoRef} controls style={{ width: '750px' }} />
                     </div>
                 </div>
             </div>
             <div>
-                <button onClick={handleReinitialize} className="bg-blue-600 text-white px-4 py-2 rounded transition hover:bg-blue-700 disabled:bg-gray-400 disabled:text-gray-100 disabled:cursor-not-allowed">
+                <button onClick={handleReinitialize} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
                     Load/Reload
                 </button>
                 <button onClick={handleTogglePlayPause} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
@@ -840,10 +884,10 @@ const Vod = ({input_index}) => {
                 <button onClick={handleStop} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
                     Stop
                 </button>
-                <button onClick={() => handleCT('l')} disabled={!leftCTEnabledRef.current} className="bg-blue-600 text-white px-4 py-2 rounded transition hover:bg-blue-700 disabled:bg-gray-400 disabled:text-gray-100 disabled:cursor-not-allowed">
-                    Left player clicktrough
+                <button onMouseDown={handleLeftMouseDown} onMouseUp={handleLeftMouseUp} disabled={!leftCTEnabledRef.current} className="bg-blue-600 text-white px-4 py-2 rounded transition hover:bg-blue-700 disabled:bg-gray-400 disabled:text-gray-100 disabled:cursor-not-allowed">
+                    Left player clickthrough
                 </button>
-                <button onClick={() => handleCT('r')} disabled={!rightCTEnabledRef.current} className="bg-blue-600 text-white px-4 py-2 rounded transition hover:bg-blue-700 disabled:bg-gray-400 disabled:text-gray-100 disabled:cursor-not-allowed">
+                <button onMouseDown={handleRightMouseDown} onMouseUp={handleRightMouseUp} disabled={!rightCTEnabledRef.current} className="bg-blue-600 text-white px-4 py-2 rounded transition hover:bg-blue-700 disabled:bg-gray-400 disabled:text-gray-100 disabled:cursor-not-allowed">
                     Right player clickthrough
                 </button>
                 <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" onClick={handleToggleLeftVolume}>
@@ -852,11 +896,19 @@ const Vod = ({input_index}) => {
                 <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" onClick={handleToggleRightVolume}>
                     R: {rightVolumeLabel}
                 </button>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" onClick={handleSkipToPostroll}>
-                    Skip
+            </div>
+            <br />
+            <div>
+                <label>Current Channel: <b>{channelID.current}</b></label><br/>
+                <button onClick={handleChannelChange('up')} className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800 transition">
+                    Ch. Up
                 </button>
+                <br />
+                <button onClick={handleChannelChange('down')} className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800 transition">
+                    Ch. Down
+                </button>                
             </div>
         </div>
     );
 };
-export default Vod;
+export default LinearCC;
