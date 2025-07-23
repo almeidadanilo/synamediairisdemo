@@ -230,8 +230,10 @@
             "max_channels": "2",
             "left_playback_url_1": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/skiing/Syna_Skiing.mpd?channelId=204&PAID=ads1&daiEnabled=true&kvp=language~heb&kvp=profile~p1",
             "left_playback_url_2": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/redbull/Syna_RedBull.mpd?channelId=204&PAID=ads1&daiEnabled=true&kvp=language~heb&kvp=profile~p1",
+            "left_ads_url": "https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/linear?duration=00:00:10&kvp=adForm~videoChannelChange&kvp=profile~p1&channelId=201",
             "right_playback_url_1": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/skiing/Syna_Skiing.mpd?channelId=204&PAID=ads1&daiEnabled=true&kvp=language~heb&kvp=profile~p1",
-            "right_playback_url_2": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/redbull/Syna_RedBull.mpd?channelId=204&PAID=ads1&daiEnabled=true&kvp=language~heb&kvp=profile~p1"
+            "right_playback_url_2": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/redbull/Syna_RedBull.mpd?channelId=204&PAID=ads1&daiEnabled=true&kvp=language~heb&kvp=profile~p1",
+            "right_ads_url": "https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/linear?duration=00:00:10&kvp=adForm~videoChannelChange&kvp=profile~p2&channelId=201"
         }        
     ]
 }

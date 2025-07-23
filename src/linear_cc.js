@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import dashjs from 'dashjs';
 import axios from 'axios';
 import dt from './data.json';
+import index from 'shaka-player-react';
 
 // LinearCC - Component for Channel Change and POI (DAI) CSAI Demo Use Cases
 
@@ -16,8 +17,15 @@ const LinearCC = ({input_index}) => {
     const leftCTEnabledRef = useRef(false);
     const rightCTEnabledRef = useRef(false);
     const channelID = useRef(1);
-    const [leftUrl, setLeftUrl] = useState((dt.vod[input_index].left_playback_url));
-    const [rightUrl, setRightUrl] = useState((dt.vod[input_index].right_playback_url));
+    const advertisementPeriod = useRef(false);
+    const leftCCTrackingEvents = useRef([]);
+    const rightCCTrackingEvents = useRef([]);
+    const leftCCAdvertiser = useRef('');
+    const rightCCAdvertiser = useRef('');
+    const leftCCPlaybackURL = useRef('');
+    const rightCCPlaybackURL = useRef(''); 
+    const [leftUrl, setLeftUrl] = useState('');
+    const [rightUrl, setRightUrl] = useState('');
     const [leftVolumeLabel, setLeftVolumeLabel] = useState("5%");
     const [rightVolumeLabel, setRightVolumeLabel] = useState("5%");
     const leftCurrentStream = useRef("");
@@ -204,7 +212,7 @@ const LinearCC = ({input_index}) => {
               logLevel: dashjs.Debug.LOG_LEVEL_NONE // or LOG_LEVEL_ERROR to keep only serious errors
             }
         });
-        leftPlayer.current.initialize(leftVideoRef.current, buildURL(leftUrl, 'l'), true, 0);
+        leftPlayer.current.initialize(leftVideoRef.current, buildURL(dt.vod[input_index][[`left_playback_url_${channelID.current}`]], 'l'), true, 0);
         leftVideoRef.current.muted = true;
         console.log('(LIN) initialize LP');
 
@@ -224,7 +232,7 @@ const LinearCC = ({input_index}) => {
               logLevel: dashjs.Debug.LOG_LEVEL_NONE
             }
         });
-        rightPlayer.current.initialize(rightVideoRef.current, buildURL(rightUrl, 'r'), true, 0);
+        rightPlayer.current.initialize(rightVideoRef.current, buildURL(dt.vod[input_index][[`right_playback_url_${channelID.current}`]], 'r'), true, 0);
         rightVideoRef.current.muted = true;
         console.log('(LIN) initialize RP');
 
@@ -335,7 +343,7 @@ const LinearCC = ({input_index}) => {
 
     useEffect(() => {
         
-        //initializePlayers();
+        initializePlayers();
 
     }, [leftUrl,rightUrl]);
 
@@ -402,17 +410,10 @@ const LinearCC = ({input_index}) => {
       
         const manifest = mpd?.manifest;
         const periods = manifest?.Period_asArray || [];
-    
-        //console.log("manifest", manifest);
 
         // Find the current period by ID
         const currentPeriod = periods.find(p => p?.id === activeStreamId);
         if (!currentPeriod) return { isAd: false, events };
-        
-        //console.log("manifest", manifest);
-        //console.log("periods", periods);
-        //console.log("currentPeriod", currentPeriod);
-        //console.log("activeStreamId", activeStreamId);
 
         // Check if it has a tracking EventStream
         //const eventStream = currentPeriod.EventStream_asArray?.[0];
@@ -420,9 +421,7 @@ const LinearCC = ({input_index}) => {
 
         const eventStreamTk = currentPeriod.EventStream_asArray.find(e => e?.value === "com.synamedia.dai.tracking.v2");
         const eventStreamCT = currentPeriod.EventStream_asArray.find(e => e?.value === "com.synamedia.dai.videoclick.v2");
-        //const eventStream = null;
-        //console.log("eventStreamTk", eventStreamTk);
-        //if (eventStream?.value === "com.synamedia.dai.tracking.v2") {
+
         if (eventStreamTk) {
             ret = true;
             //console.log("buildTrackingEvents", eventStreamTk, events, currentPeriod.id);
@@ -457,10 +456,6 @@ const LinearCC = ({input_index}) => {
     const checkTrackingEvents = (trackingEvents, setTrackingLabels, tm, pl, id) => {
 
         for (let q = 0; q < trackingEvents.length; q++) {
-            //console.log(trackingEvents);
-            //console.log(trackingEvents[q]);
-            //console.log('trackingEvents[q]?.id --> ', trackingEvents[q]?.id);
-            //console.log('id --> ', id);
             if (trackingEvents[q]?.id === id) {
                 if ((tm >= trackingEvents[q]?.pt) && (!trackingEvents[q]?.reported)) {
                     console.log('HTTP GET: ' + pl + ' - ' + trackingEvents[q].advert + ' - ' + trackingEvents[q].type + ' - ', trackingEvents[q].url);
@@ -620,7 +615,8 @@ const LinearCC = ({input_index}) => {
         setIsPlaying(false);
         resetTrackingLabels();        
       };
-  
+
+      // Handle the HTTPS GET for the ad beacons
       const getData = async (url) => {
         try {
             const response = await axios.get(url, {headers:{
@@ -770,19 +766,153 @@ const LinearCC = ({input_index}) => {
         }
     };
 
-    const handleChannelChange = (option) => {
-        console.log("handleChannelChange");
+    function timeStringToMilliseconds(timeStr) {
+        const [hms, ms = "0"] = timeStr.split('.');
+        const [hours, minutes, seconds] = hms.split(':').map(Number);
+        const milliseconds = Number(ms.padEnd(3, '0')); // ensures "2" becomes "200", "25" → "250"
+        return ((hours * 3600 + minutes * 60 + seconds) * 1000) + milliseconds;
+    }    
+
+    const processVast = (vast, pos) => {
         try {
-            let ch = channelID.current;
-            if (option === 'up') {
-                channelID.current = ch >= dt.vod[input_index].max_channels ? 1 : ch + 1;
+            // Check the API response
+            if (vast.status !== 200) {
+                // Not good response
+                return false;
+            }
+            // --------------------------------------
+            const xml = vast.data;
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xml, "application/xml");
+            const ads = xmlDoc.getElementsByTagName("Ad");
+            // Check if the response is an empty VAST
+            if (ads.length <= 0) {
+                // Empty VAST
+                return false;
+            }
+            // --------------------------------------
+            const mediaFiles = xmlDoc.getElementsByTagName("MediaFile");
+            const impressions = xmlDoc.getElementsByTagName("Impression");
+            const trackers = xmlDoc.getElementsByTagName("Tracking");
+            const durations = xmlDoc.getElementsByTagName("Duration");
+            const advertisers = xmlDoc.getElementsByTagName("Advertiser");
+            let e = {};
+            let ev = "";
+            let pts_ = 0;         
+            let durationText = "";   
+            // --------------------------------------
+            for (let i=0; i < impressions.length; i++) {
+                e = {pts: 0, url: impressions[i].textContent.trim(), reported: false}
+                if (pos === 'l') {leftCCTrackingEvents.current.push(e);} else {rightCCTrackingEvents.current.push(e);}
+            }
+            // --------------------------------------
+            durationText = durations[0].textContent.trim();
+            // --------------------------------------
+            for (let i=0; i < trackers.length; i++) {
+                ev = trackers[i].getAttribute("event");
+                switch (ev) {
+                    case "start":
+                        pts_ = 0;
+                    case "firstQuartile":
+                        pts_ = timeStringToMilliseconds(durationText) * 0.25;
+                    case "midpoint":
+                        pts_ = timeStringToMilliseconds(durationText) * 0.50;
+                    case "thirdQuartile":
+                        pts_ = timeStringToMilliseconds(durationText) * 0.75;
+                    case "complete":
+                        pts_ = timeStringToMilliseconds(durationText);
+                }
+                e = {event: ev, pts: pts_, url: trackers[i].textContent.trim(), reported: false}
+                if (pos === 'l') {leftCCTrackingEvents.current.push(e);} else {rightCCTrackingEvents.current.push(e);}      
+            }
+            // --------------------------------------
+            if (pos === 'l') {
+                leftCCAdvertiser.current = advertisers[0].textContent.trim();
             }
             else {
-                channelID.current = ch >= dt.vod[input_index].max_channels ? 1 : ch - 1;
+                rightCCAdvertiser.current = advertisers[0].textContent.trim();
             }
-            //setLeftUrl(dt.vod[input_index].left_playback_url_1);
-            //setRightUrl(dt.vod[input_index].right_playback_url_1);
-            console.log("channelID.current: ", channelID.current);
+            // --------------------------------------
+            for (let i = 0; i < mediaFiles.length; i++){
+                const typeAttr = mediaFiles[i].getAttribute("type");
+                if (typeAttr === 'application/dash+xml') {
+                    if (pos === 'l') {
+                        leftCCPlaybackURL.current = mediaFiles[i].textContent.trim();
+                    }
+                    else {
+                        rightCCPlaybackURL.current = mediaFiles[i].textContent.trim();
+                    }
+                }
+            }
+            
+            return true;
+        }
+        catch (error) {
+            console.error("Error processing the VAST: ", pos, error);
+            return false;
+        }
+    };
+
+    // Handle the HTTPS GET request to Iris ADS
+    const getVast = async (url) => {
+        try {
+            const response = await axios.get(url, {headers:{
+                'Access-Control-Allow-Origin': '*',
+                'Content-Type':'application/json'
+            }});
+            return response;
+        } catch (error) {
+            console.error('Error posting data:', error);
+            return  -1;
+        }
+    };
+
+    // Will handle the ad request and pre-processing during the channel change
+    const handleAdRequest = async () => {
+        try {
+            let l_url = buildURL(dt.vod[input_index].left_ads_url, 'l');
+            let r_url = buildURL(dt.vod[input_index].right_ads_url, 'r');
+            let l_vast = await getVast(l_url);
+            let r_vast = await getVast(r_url);
+            let p_l_vast = processVast(l_vast, 'l');
+            let p_r_vast = processVast(r_vast, 'r');
+
+            // If all processing is fine, process the playback of the left device
+            if (p_l_vast){
+
+            }
+
+            // If all processing is fine, process the playback of the right device
+            if (p_r_vast){
+
+            }
+
+            advertisementPeriod.current = false;
+        }
+        catch (error) {
+            console.error('Error handling channel change:', error);
+        }
+    };
+
+    // Will handle the channel change basic mechanism 
+    const handleChannelChange = (option) => {
+        //console.log("handleChannelChange");
+        try {
+            if (!advertisementPeriod.current) {
+                let ch = channelID.current;
+                if (option === 'up') {
+                    channelID.current = ch >= dt.vod[input_index].max_channels ? 1 : ch + 1;
+                }
+                else {
+                    channelID.current = ch <= 1 ? dt.vod[input_index].max_channels : ch - 1;
+                }
+                setLeftUrl(dt.vod[input_index][`left_playback_url_${channelID.current}`]);
+                setRightUrl(dt.vod[input_index][`right_playback_url_${channelID.current}`]);
+                advertisementPeriod.current = true;
+                handleAdRequest();
+            }
+            //handleReinitialize();
+            //console.log("channelID.current: ", channelID.current);
         }
         catch (error) {
             console.error('Error handling channel change:', error);
@@ -900,11 +1030,11 @@ const LinearCC = ({input_index}) => {
             <br />
             <div>
                 <label>Current Channel: <b>{channelID.current}</b></label><br/>
-                <button onClick={handleChannelChange('up')} className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800 transition">
+                <button onClick={() => handleChannelChange('up')} disabled={advertisementPeriod.current} className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800 transition">
                     Ch. Up
                 </button>
                 <br />
-                <button onClick={handleChannelChange('down')} className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800 transition">
+                <button onClick={() => handleChannelChange('down')} disabled={advertisementPeriod.current} className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800 transition">
                     Ch. Down
                 </button>                
             </div>

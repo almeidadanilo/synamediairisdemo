@@ -827,6 +827,7 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
             }
       };
 
+      // Handle the HTTPS GET request to Iris ADS
       const getVast = async (url) => {
         try {
             const response = await axios.get(url, {headers:{
@@ -840,6 +841,7 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
         }
       };
 
+      // Handle the HTTPS GET for the ad beacons
       const getData = async (url) => {
         try {
             const response = await axios.get(url, {headers:{
