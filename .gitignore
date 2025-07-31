@@ -5,6 +5,7 @@
 /node_modules_a
 /cors-proxy/node_modules
 /public/specials
+/IrisWOF/build/*
 /.pnp
 .pnp.js
 
@@ -32,6 +33,8 @@ package-lock.json
 /others/demotnscripts/output.ini.json
 /src/old/*.json
 /cors-proxy/*.*
+/others/demotnscripts/crypto/build/*
+*.exe
 *.jsonl
 *.key
 *.log

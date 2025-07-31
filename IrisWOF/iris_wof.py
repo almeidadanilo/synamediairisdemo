@@ -31,6 +31,14 @@ btQuickset = 0
 
 # UI Setup
 root = tk.Tk()
+### Loads Synamedia Iris Icon --- try/except for cross platform safety
+try:
+    root.iconbitmap("iris.ico")
+except:
+    # Fallback for platforms that don’t support .ico
+    icon_img = tk.PhotoImage(file="iris_logo_icon.png")
+    root.iconphoto(True, icon_img)
+###
 root.title("The Wonderful Iris BLUEBUTTON Experience")
 root.geometry("550x700")
 root.resizable(False, False)
@@ -54,7 +62,7 @@ top_controls_frame = tk.Frame(tab_wheel)
 top_controls_frame.pack(pady=10)
 
 # Combo Box Options
-combo_options = ["Swimming Race", "Destination Earth", "Keshet", "MEG", "vDCM"]
+combo_options = ["Swimming Race", "Destination Earth", "Keshet", "FujairahTV", "MEG", "vDCM"]
 selected_option = tk.StringVar()
 selected_option.set(combo_options[0])  # default selection
 
@@ -148,6 +156,14 @@ def quickset():
         manual_inputs["inESAMIP"].insert(0, "192.168.1.101")
         manual_inputs["inESAMPORT"].delete(0, tk.END)
         manual_inputs["inESAMPORT"].insert(0, "9100")
+    elif current == '3':
+        btQuickset["text"] = '4'
+        manual_inputs["inESAMAP"].delete(0, tk.END)
+        manual_inputs["inESAMAP"].insert(0, "APFT")
+        manual_inputs["inESAMIP"].delete(0, tk.END)
+        manual_inputs["inESAMIP"].insert(0, "23.129.240.38")
+        manual_inputs["inESAMPORT"].delete(0, tk.END)
+        manual_inputs["inESAMPORT"].insert(0, "8105")        
     else:
         btQuickset["text"] = '..'
         manual_inputs["inESAMAP"].delete(0, tk.END)
@@ -208,7 +224,7 @@ def send_scte():
 # Select the correct wheel logical segment
 ######################################################################################################
 def get_segments_for_option(option):
-    if option in ["Swimming Race", "Destination Earth", "Keshet"]:
+    if option in ["Swimming Race", "Destination Earth", "Keshet", "FujairahTV"]:
         return wheel_segments_30
     else:
         return wheel_segments_15
@@ -239,24 +255,44 @@ def update_wheel_image(event=None):
 ######################################################################################################
 # Updates the specials json file for the landpage rendering
 ######################################################################################################
-def update_specials_json (filename):
-    # Load existing index.json or create a new list
-    if os.path.exists('../public/specials/index.json'):
-        with open('../public/specials/index.json', "r", encoding="utf-8") as f:
-            try:
-                index_list = json.load(f)
-            except json.JSONDecodeError:
-                index_list = []
+def update_specials_json (filename, build):
+
+    if build:
+        # Load existing index.json or create a new list
+        if os.path.exists('../build/specials/index.json'):
+            with open('../build/specials/index.json', "r", encoding="utf-8") as f:
+                try:
+                    index_list = json.load(f)
+                except json.JSONDecodeError:
+                    index_list = []
+        else:
+            index_list = []
+
+        # Append new filename if it's not already there
+        if os.path.basename(filename) not in index_list:
+            index_list.append(os.path.basename(filename))
+
+        # Save updated index.json
+        with open('../build/specials/index.json', "w", encoding="utf-8") as f:
+            json.dump(index_list, f, indent=4)
     else:
-        index_list = []
+        # Load existing index.json or create a new list
+        if os.path.exists('../public/specials/index.json'):
+            with open('../public/specials/index.json', "r", encoding="utf-8") as f:
+                try:
+                    index_list = json.load(f)
+                except json.JSONDecodeError:
+                    index_list = []
+        else:
+            index_list = []
 
-    # Append new filename if it's not already there
-    if os.path.basename(filename) not in index_list:
-        index_list.append(os.path.basename(filename))
+        # Append new filename if it's not already there
+        if os.path.basename(filename) not in index_list:
+            index_list.append(os.path.basename(filename))
 
-    # Save updated index.json
-    with open('../public/specials/index.json', "w", encoding="utf-8") as f:
-        json.dump(index_list, f, indent=4)
+        # Save updated index.json
+        with open('../public/specials/index.json', "w", encoding="utf-8") as f:
+            json.dump(index_list, f, indent=4)
 
 ######################################################################################################
 # Take the photo Function
@@ -265,8 +301,12 @@ def capture_special_photo():
     if not os.path.exists('../public/specials'):
         os.makedirs('../public/specials')
 
+    if not os.path.exists('../build/specials'):
+        os.makedirs('../public/specials')
+
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f'../public/specials/{timestamp}.jpg'
+    filenameB = f'../build/specials/{timestamp}.jpg'
 
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
@@ -282,13 +322,15 @@ def capture_special_photo():
         final_hsv = cv2.merge((h, s, v))
         bright_frame = cv2.cvtColor(final_hsv, cv2.COLOR_HSV2BGR)
         cv2.imwrite(filename, bright_frame)
-        print(f"📸 Special moment captured: {filename}")
+        cv2.imwrite(filenameB, bright_frame)
+        print(f"📸 Special moment captured: {filename} and {filenameB}")
     else:
         print("Failed to capture image.")
 
     cap.release()
 
-    update_specials_json(filename)
+    update_specials_json(filename, False)
+    update_specials_json(filenameB, True)
 
 ######################################################################################################
 # Take the screenshot Function
@@ -297,14 +339,20 @@ def capture_screenshot_special():
     if not os.path.exists('../public/specials'):
         os.makedirs('../public/specials')
 
+    if not os.path.exists('../build/specials'):
+        os.makedirs('../public/specials')        
+
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f'../public/specials/{timestamp}.jpg'
+    filenameB = f'../build/specials/{timestamp}.jpg'
 
     image = pyautogui.screenshot()
     image.save(filename)
-    print(f"🖼️ Screenshot saved to: {filename}")
+    image.save(filenameB)
+    print(f"🖼️ Screenshot saved to: {filename} and {filenameB}")
 
-    update_specials_json(filename)
+    update_specials_json(filename, False)
+    update_specials_json(filenameB, True)
 
 ######################################################################################################
 # Countdown to the picture function
@@ -368,8 +416,8 @@ def spin_wheel():
     result_label.config(text=f"🎯 Result: {result}", fg="green" if result != "Special" else "purple")
     
     #result = "SPECIAL"
-    if result == "120":
-        result = "SPECIAL"
+    #if result == "120" or result == "90":
+    #    result = "SPECIAL"
 
     if result == "SPECIAL":
         start_countdown_and_capture()
@@ -428,23 +476,27 @@ def send_ESAM(res, opt):
         duration = float(res)
 
     if opt == "Swimming Race":
-        esamid = "APSR"
+        esamid = 'APSR'
         ip = '23.129.240.38'
         port = '8105'
     elif opt == "Destination Earth":
-        esamid = "APDE"
+        esamid = 'APDE'
         ip = '23.129.240.38'
         port = '8105'
     elif opt == "Keshet":
-        esamid = "APKE"
+        esamid = 'APKE'
+        ip = '23.129.240.38'
+        port = '8105'
+    elif opt == "FujairahTV":
+        esamid = 'APFT'
         ip = '23.129.240.38'
         port = '8105'
     elif opt == "MEG":
-        esamid = "APMEG"
+        esamid = 'APMEG'
         ip = '192.168.0.10'
         port = '9100'
     elif opt == "vDCM":
-        esamid = "APVDCM"
+        esamid = 'APVDCM'
         ip = '192.168.0.10'
         port = '9100'
 
