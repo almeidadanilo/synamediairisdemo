@@ -35,20 +35,20 @@ const Linear = ({input_index}) => {
     const [leftCurrentAdvert, setLeftCurrentAdvert] = useState('');
     const [rightCurrentAdvert, setRightCurrentAdvert] = useState('');    
     const [leftTrackingLabels, setLeftTrackingLabels] = useState({
-      impression: '',
-      adstart: '',
-      firstQuartile: '',
-      secondQuartile: '',
-      thirdQuartile: '',
-      completion: ''
+        impression: '',
+        adstart: '',
+        firstQuartile: '',
+        secondQuartile: '',
+        thirdQuartile: '',
+        completion: ''
     });
     const [rightTrackingLabels, setRightTrackingLabels] = useState({
-      impression: '',
-      adstart: '',
-      firstQuartile: '',
-      secondQuartile: '',
-      thirdQuartile: '',
-      completion: ''
+        impression: '',
+        adstart: '',
+        firstQuartile: '',
+        secondQuartile: '',
+        thirdQuartile: '',
+        completion: ''
     });
     const _INTERVAL_ = 1000;
     const holdThreshold = 1000; // milliseconds
@@ -63,7 +63,7 @@ const Linear = ({input_index}) => {
         
         // Start right timer
         intervalRightRef.current = setInterval(updateCurrentTimeRight, 1000);
-      
+        
         return () => {
             console.log('[Linear] Component unmounting — tearing down players');
             // Cleanup on unmount or page change
@@ -253,7 +253,7 @@ const Linear = ({input_index}) => {
         leftPlayer.current.on(dashjs.MediaPlayer.events.MANIFEST_LOADED, () => {
             //console.log('(LIN) Left manifest loaded — safe to proceed');
             leftPlayer.current.on(dashjs.MediaPlayer.events.PERIOD_SWITCH_STARTED, (e) => {
-
+                //console.log(`Left Player PERIOD_SWITCH_STARTED: ${e}`)
             });
 
             leftPlayer.current.on(dashjs.MediaPlayer.events.STREAM_ACTIVATED, (e) => {
@@ -573,24 +573,42 @@ const Linear = ({input_index}) => {
     };
 
     const handleReinitialize = () => {
+
         if (leftPlayer && rightPlayer) {
-  
-          let url = '';
-  
-          leftPlayer.current.reset();
-          rightPlayer.current.reset();
-  
-          url = buildURL(leftUrl, 'l');
-          leftPlayer.current.initialize(leftVideoRef.current, url, false, 0);
-          url = buildURL(rightUrl, 'r');
-          rightPlayer.current.initialize(rightVideoRef.current, url, false, 0);
+            let url = '';    
+            leftPlayer.current.reset();
+            rightPlayer.current.reset();
+            
+            // check for any special header required for the stitching request
+            if (dt.vod[input_index] && dt.vod[input_index].special_header) {
+                const headers = dt.vod[input_index].special_header;
+                const requestModifier = {
+                    modifyRequestHeader: function (xhr) {
+                        for (const key in headers) {
+                            if (headers[key]) {
+                                xhr.setRequestHeader(key, headers[key]);
+                            }
+                        }
+                        return xhr;
+                    }
+                };
+                leftPlayer.current.updateSettings({
+                    streaming: { xhr: requestModifier }
+                });
+                rightPlayer.current.updateSettings({
+                    streaming: { xhr: requestModifier }
+                });
+            }
+            url = buildURL(leftUrl, 'l');
+            leftPlayer.current.initialize(leftVideoRef.current, url, false, 0);
+            url = buildURL(rightUrl, 'r');
+            rightPlayer.current.initialize(rightVideoRef.current, url, false, 0);
         }
         setIsPlaying(false);
         resetTrackingLabels();
-      };
+    };
   
-      const handleStop = () => {
-
+    const handleStop = () => {
         if (intervalLeftRef.current) {
             clearInterval(intervalLeftRef.current);
             intervalLeftRef.current = null;
@@ -599,13 +617,11 @@ const Linear = ({input_index}) => {
             clearInterval(intervalRightRef.current);
             intervalRightRef.current = null;
         }
-
         if (leftPlayer && rightPlayer) {
             // Stop and reset Dash.js players
             leftPlayer.current.reset();
             rightPlayer.current.reset();
         }
-    
         if (leftVideoRef.current && rightVideoRef.current) {
             // Pause and clear video sources
             leftVideoRef.current.pause();
@@ -616,25 +632,23 @@ const Linear = ({input_index}) => {
             rightVideoRef.current.removeAttribute('src');
             rightVideoRef.current.load();
         }
-    
         // Reset any tracking states and variables
         setIsPlaying(false);
         resetTrackingLabels();        
-      };
+    };
   
-      const getData = async (url) => {
+    const getData = async (url) => {
         try {
             const response = await axios.get(url, {headers:{
                 'Access-Control-Allow-Origin': '*',
                 'Content-Type':'application/json'
             }});
-            //console.log(response.data);
             return response.status;
         } catch (error) {
             console.error('Error posting data:', error);
             return -1;
         }
-      };    
+    };
 
     const handleLeftMouseDown = () => {
         leftClickStartTime = new Date().getTime();

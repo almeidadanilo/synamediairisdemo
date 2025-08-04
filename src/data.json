@@ -300,6 +300,78 @@
             "right_playback_url_1": "",
             "right_playback_url_2": "",
             "right_ads_url": ""
-        }              
+        },
+        {
+            "demo_scene": "20",
+            "type":"VOD",
+            "postroll_offset": 3977,
+            "menu_title": "Profile 1|2: BRA",
+            "great_title": "Spot Pre/Post-roll",
+            "left_title": "1x Pre/Post-roll",
+            "left_segment":"Profile: P1 [SPO]",
+            "left_flag": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Bandeira_da_cidade_de_S%C3%A3o_Paulo.svg",
+            "right_title": "Mid-roll Spots",
+            "right_segment": "Profile: P2 [RJO]",
+            "right_flag": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Bandeira_da_cidade_do_Rio_de_Janeiro.svg",
+            "max_channels": "0",
+            "special_header": {
+                "Globo-Checksum": "77e79560b8170698b47d2f420af0a3ee"
+            },
+            "left_playback_url": "http://vod-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/voslab.live.nowonline.com.br/Content/dsc7/VOD/15849/1498/7fc35a83-38bb-4564-9509-ea386b90923d/c039d313-474b-1e6c-6396-558c9f7b0017/manifest.mpd?PID=dai.com&optin=true&daiEnabled=true&kvp=country~BRA&kvp=profile~p1",
+            "left_playback_url_1": "",
+            "left_playback_url_2": "",
+            "left_ads_url": "",
+            "right_playback_url": "http://vod-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/voslab.live.nowonline.com.br/Content/dsc7/VOD/15849/1498/7fc35a83-38bb-4564-9509-ea386b90923d/c039d313-474b-1e6c-6396-558c9f7b0017/manifest.mpd?PID=dai.com&optin=true&daiEnabled=true&kvp=country~BRA&kvp=profile~p2",
+            "right_playback_url_1": "",
+            "right_playback_url_2": "",
+            "right_ads_url": ""
+        },
+        {
+            "demo_scene": "21",
+            "type":"LINEAR",
+            "postroll_offset": 0,
+            "menu_title": "Profile 1|2: ZAF",
+            "great_title": "AfroLand TV Spot Mid-roll, SCTE35 on demand",
+            "left_title": "Mid-roll Spots",
+            "left_segment":"Profile: P1 [ZAF]",
+            "left_flag": "https://upload.wikimedia.org/wikipedia/commons/a/af/Flag_of_South_Africa.svg",
+            "right_title": "Mid-roll Spots",
+            "right_segment": "Profile: P2 [ZAF]",
+            "right_flag": "https://upload.wikimedia.org/wikipedia/commons/a/af/Flag_of_South_Africa.svg",
+            "max_channels": "0",
+            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/mqitwktu.live.quortex.io/afroLand_tv/1080_1_aud_0_sub/nga_afroland_enc_dash/index.mpd?channelId=204&hhid=sub_100067&PAID=ads1&daiEnabled=true",
+            "left_playback_url_1": "",
+            "left_playback_url_2": "",
+            "left_ads_url": "",
+            "right_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/mqitwktu.live.quortex.io/afroLand_tv/1080_1_aud_0_sub/nga_afroland_enc_dash/index.mpd?channelId=204&hhid=6209804952225ab3d14348307b5a4a27&PAID=ads1&daiEnabled=true",
+            "right_playback_url_1": "",
+            "right_playback_url_2": "",
+            "right_ads_url": ""
+        },
+        {
+            "demo_scene": "22",
+            "type":"LINEAR",
+            "postroll_offset": 0,
+            "menu_title": "Profile 1|2: BRA",
+            "great_title": "... Spot Mid-roll, SCTE35 on demand",
+            "left_title": "Mid-roll Spots",
+            "left_segment":"Profile: P1 [SPO]",
+            "left_flag": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Bandeira_da_cidade_de_S%C3%A3o_Paulo.svg",
+            "right_title": "Mid-roll Spots",
+            "right_segment": "Profile: P2 [RJO]",
+            "right_flag": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Bandeira_da_cidade_do_Rio_de_Janeiro.svg",
+            "max_channels": "0",
+            "special_header": {
+                "Globo-Checksum": "77e79560b8170698b47d2f420af0a3ee"
+            },            
+            "left_playback_url": "http://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/streamweb-live.clarocdn.com.br/Content/Channel/DAI02/dsc2/manifest.mpd?channelId=204&hhid=sub_100067&PAID=ads1&daiEnabled=true",
+            "left_playback_url_1": "",
+            "left_playback_url_2": "",
+            "left_ads_url": "",
+            "right_playback_url": "http://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/streamweb-live.clarocdn.com.br/Content/Channel/DAI02/dsc2/manifest.mpd?channelId=204&hhid=6209804952225ab3d14348307b5a4a27&PAID=ads1&daiEnabled=true",
+            "right_playback_url_1": "",
+            "right_playback_url_2": "",
+            "right_ads_url": ""
+        }
     ]
 }

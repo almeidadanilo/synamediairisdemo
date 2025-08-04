@@ -39,6 +39,9 @@ function App() {
             <Route path="/playback17" element={<Vod input_index = {16}/>} />
             <Route path="/playback18" element={<Linear input_index = {17}/>} />
             <Route path="/playback19" element={<Linear input_index = {18}/>} />
+            <Route path='/playback20' element={<Vod input_index = {19}/>} />
+            <Route path='/playback21' element={<Linear input_index = {20}/>} />
+            <Route path='/playback22' element={<Linear input_index = {21}/>} />
             <Route path="/landing" element={<LandingPage />} />
           </Routes>
         </div>

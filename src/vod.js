@@ -34,20 +34,20 @@ const Vod = ({input_index}) => {
     const [leftCurrentAdvert, setLeftCurrentAdvert] = useState('');
     const [rightCurrentAdvert, setRightCurrentAdvert] = useState('');    
     const [leftTrackingLabels, setLeftTrackingLabels] = useState({
-      impression: '',
-      adstart: '',
-      firstQuartile: '',
-      secondQuartile: '',
-      thirdQuartile: '',
-      completion: ''
+        impression: '',
+        adstart: '',
+        firstQuartile: '',
+        secondQuartile: '',
+        thirdQuartile: '',
+        completion: ''
     });
     const [rightTrackingLabels, setRightTrackingLabels] = useState({
-      impression: '',
-      adstart: '',
-      firstQuartile: '',
-      secondQuartile: '',
-      thirdQuartile: '',
-      completion: ''
+        impression: '',
+        adstart: '',
+        firstQuartile: '',
+        secondQuartile: '',
+        thirdQuartile: '',
+        completion: ''
     });
     const _INTERVAL_ = 1000;
 
@@ -608,17 +608,45 @@ const Vod = ({input_index}) => {
     };
 
     const handleReinitialize = () => {
+
         if (leftPlayer && rightPlayer) {
-  
-          let url = '';
-  
-          leftPlayer.current.reset();
-          rightPlayer.current.reset();
-  
-          url = buildURL(leftUrl, 'l');
-          leftPlayer.current.initialize(leftVideoRef.current, url, false, 0);
-          url = buildURL(rightUrl, 'r');
-          rightPlayer.current.initialize(rightVideoRef.current, url, false, 0);
+            let url = '';
+
+            leftPlayer.current.reset();
+            rightPlayer.current.reset();
+
+            // check for any special header required for the stitching request
+            if (dt.vod[input_index] && dt.vod[input_index].special_header) {
+                const headers = dt.vod[input_index].special_header;
+                const requestModifier = {
+                    modifyRequestHeader: function (xhr) {
+                        for (const key in headers) {
+                            if (headers[key]) {
+                                xhr.setRequestHeader(key, headers[key]);
+                            }
+                        }
+                        return xhr;
+                    }
+                };
+                leftPlayer.current.updateSettings({
+                    streaming: { xhr: requestModifier }
+                });
+                rightPlayer.current.updateSettings({
+                    streaming: { xhr: requestModifier }
+                });
+                /*const requestModifier = new dashjs.RequestModifier();
+                for (const key in headers) {
+                    requestModifier.addCustomRequestHeader(key, headers[key]);
+                }
+                leftPlayer.current.setRequestModifier(requestModifier);
+                rightPlayer.current.setRequestModifier(requestModifier);
+                */               
+            }
+            //
+            url = buildURL(leftUrl, 'l');
+            leftPlayer.current.initialize(leftVideoRef.current, url, false, 0);
+            url = buildURL(rightUrl, 'r');
+            rightPlayer.current.initialize(rightVideoRef.current, url, false, 0);
         }
         setIsPlaying(false);
         resetTrackingLabels();
