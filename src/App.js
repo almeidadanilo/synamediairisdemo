@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Header from './header';
 import Home from './Home';
-import About from './About';
 import Menu from './Menu';
 import Vod from './vod';
 import Linear from './linear';
@@ -16,10 +15,9 @@ function App() {
       <div className="min-h-screen bg-gray-100 text-gray-900">
         <Header />
         <Menu />
-        <div className='p-4'>
+        <div className="border-none border-0">
           <Routes>
             <Route path="/" exact element={<Home/>} />
-            <Route path="/About" element={<About/>} />
             <Route path="/playback1" element={<Vod input_index = {0}/>} />
             <Route path="/playback2" element={<Vod input_index = {1}/>} />
             <Route path="/playback3" element={<Linear input_index = {2}/>} />

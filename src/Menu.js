@@ -3,122 +3,144 @@ import { Link } from 'react-router-dom';
 import data from './data.json';
 
 function Menu() {
-  const [vodOpen, setVodOpen] = useState(false);
-  const [linearOpen, setLinearOpen] = useState(false);
-  const [specialsOpen, setSpecialsOpen] = useState(false);
+  // 'vod' | 'linear' | 'specials' | null
+  const [open, setOpen] = useState(null);
 
   const vodItems = data.vod
-    .filter(item => item.type === "VOD")
-    .map((item, index) => ({
-      label: item.menu_title,
-      path: `/playback${item.demo_scene}`
-    }));
+    .filter(item => item.type === 'VOD')
+    .map(item => ({ label: item.menu_title, path: `/playback${item.demo_scene}` }));
 
   const linearItems = data.vod
-    .filter(item => item.type === "LINEAR")
-    .map((item, index) => {
-      //const linearIndex = data.vod.filter(d => d.type === "VOD").length + index;
-      return {
-        label: item.menu_title,
-        path: `/playback${item.demo_scene}`
-      };
-    });
+    .filter(item => item.type === 'LINEAR')
+    .map(item => ({ label: item.menu_title, path: `/playback${item.demo_scene}` }));
 
-  const toggleVod = () => {
-    setVodOpen(prev => !prev);
-    setLinearOpen(false);
-    setSpecialsOpen(false);
-  };
+  const specialsItems = [
+    { label: data.vod[11].menu_title, path: '/specials1' },
+    { label: data.vod[12].menu_title, path: '/specials2' },
+    { label: data.vod[14].menu_title, path: '/specials3' },
+    { label: data.vod[15].menu_title, path: '/linearcc1' },
+  ];
 
-  const toggleLinear = () => {
-    setLinearOpen(prev => !prev);
-    setVodOpen(false);
-    setSpecialsOpen(false);
-  };
-  
-  const toggleSpecials = () => {
-    setSpecialsOpen(prev => !prev);
-    setVodOpen(false);
-    setLinearOpen(false);
-  };
+  const openMenu = name => setOpen(name);
+  const closeAll = () => setOpen(null);
 
-  const closeMenus = () => {
-    setVodOpen(false);
-    setLinearOpen(false);
-    setSpecialsOpen(false);
-  };
+  const topBtn =
+    'px-4 py-2 block transition hover:text-yellow-300';
+
+  const dropdown =
+    'bg-gray-700 rounded shadow-lg min-w-[220px] whitespace-nowrap overflow-hidden';
 
   return (
-    <nav className="bg-gray-800 text-white px-6 py-4 shadow-md" onMouseLeave={closeMenus}>
-      <ul className="flex space-x-6 justify-center relative z-50">
-        {/* Static */}
-        <li><Link to="/" className="hover:text-yellow-300 block px-4 py-2">Home</Link></li>
-        <li><Link to="/about" className="hover:text-yellow-300 block px-4 py-2">About</Link></li>
+    <nav className="bg-gray-800 text-white px-6 h-10 shadow-md font-poppins flex items-center">
+      <ul className="mx-auto flex items-center justify-center gap-8">
+        {/* Home */}
+        <li>
+          <Link to="/" className={topBtn} onClick={closeAll}>Home</Link>
+        </li>
 
-        {/* VOD Toggle */}
-        <li className="relative">
-          <button onClick={toggleVod} className="block px-4 py-2 hover:text-yellow-300">
-            SSAI-VOD
+        {/* VOD */}
+        <li
+          className="relative"
+          onMouseEnter={() => openMenu('vod')}
+          onMouseLeave={closeAll}
+        >
+          <button
+            type="button"
+            className={topBtn}
+            aria-haspopup="true"
+            aria-expanded={open === 'vod'}
+            onClick={() => (open === 'vod' ? closeAll() : openMenu('vod'))}
+          >
+            SSAI‑VOD
           </button>
-          {vodOpen && (
-            <ul className="absolute bg-gray-700 mt-2 rounded shadow-lg min-w-[200px] whitespace-nowrap z-50">
-              {vodItems.map((item, idx) => (
-                <li key={idx}>
-                  <Link to={item.path} className="block px-4 py-2 hover:bg-gray-600" onClick={closeMenus}>
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+
+          {open === 'vod' && (
+            <div className="absolute left-1/2 -translate-x-1/2 top-full z-50">
+              {/* no padding/margin on top to avoid gaps under h-10 bar */}
+              <ul className={dropdown}>
+                {vodItems.map((item, idx) => (
+                  <li key={idx}>
+                    <Link
+                      to={item.path}
+                      className="block px-5 py-2 hover:bg-gray-600"
+                      onClick={closeAll}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </li>
 
-        {/* LINEAR Toggle */}
-        <li className="relative">
-          <button onClick={toggleLinear} className="block px-4 py-2 hover:text-yellow-300">
-            SSAI-Linear
+        {/* LINEAR */}
+        <li
+          className="relative"
+          onMouseEnter={() => openMenu('linear')}
+          onMouseLeave={closeAll}
+        >
+          <button
+            type="button"
+            className={topBtn}
+            aria-haspopup="true"
+            aria-expanded={open === 'linear'}
+            onClick={() => (open === 'linear' ? closeAll() : openMenu('linear'))}
+          >
+            SSAI‑Linear
           </button>
-          {linearOpen && (
-            <ul className="absolute bg-gray-700 mt-2 rounded shadow-lg min-w-[200px] whitespace-nowrap z-50">
-              {linearItems.map((item, idx) => (
-                <li key={idx}>
-                  <Link to={item.path} className="block px-4 py-2 hover:bg-gray-600" onClick={closeMenus}>
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+
+          {open === 'linear' && (
+            <div className="absolute left-1/2 -translate-x-1/2 top-full z-50">
+              <ul className={dropdown}>
+                {linearItems.map((item, idx) => (
+                  <li key={idx}>
+                    <Link
+                      to={item.path}
+                      className="block px-5 py-2 hover:bg-gray-600"
+                      onClick={closeAll}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </li>
 
-        {/* Special Toggle */}
-        <li className="relative">
-          <button onClick={toggleSpecials} className="block px-4 py-2 hover:text-yellow-300">
-            Special-Cases
+        {/* SPECIALS */}
+        <li
+          className="relative"
+          onMouseEnter={() => openMenu('specials')}
+          onMouseLeave={closeAll}
+        >
+          <button
+            type="button"
+            className={topBtn}
+            aria-haspopup="true"
+            aria-expanded={open === 'specials'}
+            onClick={() => (open === 'specials' ? closeAll() : openMenu('specials'))}
+          >
+            Special‑Cases
           </button>
-          {specialsOpen && (
-            <ul className="absolute bg-gray-700 mt-2 rounded shadow-lg min-w-[200px] whitespace-nowrap z-50">
-              <li key="1">
-                <Link to="/specials1" className="block px-4 py-2 hover:bg-gray-600" onClick={closeMenus}>
-                  {data.vod[11].menu_title}
-                </Link>
-              </li>
-              <li key="2">
-                <Link to="/specials2" className="block px-4 py-2 hover:bg-gray-600" onClick={closeMenus}>
-                  {data.vod[12].menu_title}
-                </Link>
-              </li>   
-              <li key="3">
-                <Link to="/specials3" className="block px-4 py-2 hover:bg-gray-600" onClick={closeMenus}>
-                  {data.vod[14].menu_title}
-                </Link>
-              </li>
-              <li key="4">
-                <Link to="/linearcc1" className="block px-4 py-2 hover:bg-gray-600" onClick={closeMenus}>
-                  {data.vod[15].menu_title}
-                </Link>
-              </li>                         
-            </ul>
+
+          {open === 'specials' && (
+            <div className="absolute left-1/2 -translate-x-1/2 top-full z-50">
+              <ul className={dropdown}>
+                {specialsItems.map((item, idx) => (
+                  <li key={idx}>
+                    <Link
+                      to={item.path}
+                      className="block px-5 py-2 hover:bg-gray-600"
+                      onClick={closeAll}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </li>
       </ul>

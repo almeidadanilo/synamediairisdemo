@@ -34,6 +34,7 @@ package-lock.json
 /src/old/*.json
 /cors-proxy/*.*
 /others/demotnscripts/crypto/build/*
+/reference_UI_design/*
 *.exe
 *.jsonl
 *.key

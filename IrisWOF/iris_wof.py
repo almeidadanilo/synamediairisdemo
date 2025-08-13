@@ -233,7 +233,7 @@ def get_segments_for_option(option):
 # Select the correct wheel image
 ######################################################################################################
 def get_wheel_image_for_option(option):
-    if option in ["Swimming Race", "Destination Earth", "Keshet"]:
+    if option in ["Swimming Race", "Destination Earth", "Keshet", "FujairahTV"]:
         return image_30
     elif option in ["MEG", "vDCM"]:
         return image_15

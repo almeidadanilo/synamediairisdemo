@@ -41,8 +41,8 @@
             "right_title": "Flex pod 30s spots Mid-roll",
             "right_segment": "Luxury Travel/Outside",
             "right_flag": "",
-            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/swim/Syna_Swimming.mpd?hhid=sub_100067&PAID=ads1&daiEnabled=true",
-            "right_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/swim/Syna_Swimming.mpd?hhid=6209804952225ab3d14348307b5a4a27&PAID=ads1&daiEnabled=true"
+            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/swim/Syna_Swimming.mpd?hhid=sub_100067&PAID=dai.com&daiEnabled=true",
+            "right_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/swim/Syna_Swimming.mpd?hhid=6209804952225ab3d14348307b5a4a27&PAID=dai.com&daiEnabled=true"
         },
         {
             "demo_scene": "4",
@@ -55,8 +55,8 @@
             "right_title": "1x30s Mid-roll",
             "right_segment": "Luxury Travel/Outside",
             "right_flag": "",
-            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/swim/Syna_Swimming.mpd?PAID=ads1&kvp=POD~yes&daiEnabled=true",
-            "right_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/swim/Syna_Swimming.mpd?hhid=6209804952225ab3d14348307b5a4a27&PAID=ads1&daiEnabled=true"
+            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/swim/Syna_Swimming.mpd?PAID=dai.com&kvp=POD~yes&daiEnabled=true",
+            "right_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/swim/Syna_Swimming.mpd?hhid=6209804952225ab3d14348307b5a4a27&PAID=dai.com&daiEnabled=true"
         },
         {
             "demo_scene": "5",
@@ -84,8 +84,8 @@
             "right_title": "Mid-roll Spots",
             "right_segment": "Region: Crotia",
             "right_flag": "https://upload.wikimedia.org/wikipedia/commons/d/d5/Civil_ensign_of_Croatia.svg",
-            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/de/DE.mpd?PAID=ads1&daiEnabled=true&channelId=201&kvp=language~slo&kvp=resolution~HD",
-            "right_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/de/DE.mpd?PAID=ads1&daiEnabled=true&channelId=201&kvp=language~cro&kvp=resolution~HD"
+            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/de/DE.mpd?PAID=dai.com&daiEnabled=true&channelId=201&kvp=language~slo&kvp=resolution~HD",
+            "right_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/de/DE.mpd?PAID=dai.com&daiEnabled=true&channelId=201&kvp=language~cro&kvp=resolution~HD"
         },
         {
             "demo_scene": "7",
@@ -128,8 +128,8 @@
             "right_title": "Mid-roll Spots",
             "right_segment": "Profile: P2",
             "right_flag": "https://upload.wikimedia.org/wikipedia/commons/0/09/Flag_of_South_Korea.svg",
-            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/swim/Syna_Swimming.mpd?channelId=201&PAID=ads1&daiEnabled=true&kvp=language~kor&kvp=profile~p1",
-            "right_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/swim/Syna_Swimming.mpd?channelId=204&PAID=ads1&daiEnabled=true&kvp=language~kor&kvp=profile~p2"
+            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/swim/Syna_Swimming.mpd?channelId=201&PAID=dai.com&daiEnabled=true&kvp=language~kor&kvp=profile~p1",
+            "right_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/swim/Syna_Swimming.mpd?channelId=204&PAID=dai.com&daiEnabled=true&kvp=language~kor&kvp=profile~p2"
         },
         {
             "demo_scene": "10",
@@ -142,8 +142,8 @@
             "right_title": "Mid-roll Spots",
             "right_segment": "Profile: P2",
             "right_flag": "https://upload.wikimedia.org/wikipedia/commons/0/09/Flag_of_South_Korea.svg",
-            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/f325nk61.live.quortex.io/fast_ch2/1080p50/dash_no_multi/index.mpd?channelId=201&PAID=ads1&daiEnabled=true&kvp=language~kor&kvp=profile~p1",
-            "right_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/f325nk61.live.quortex.io/fast_ch2/1080p50/dash_no_multi/index.mpd?channelId=204&PAID=ads1&daiEnabled=true&kvp=language~kor&kvp=profile~p2"
+            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/f325nk61.live.quortex.io/fast_ch2/1080p50/dash_no_multi/index.mpd?channelId=201&PAID=dai.com&daiEnabled=true&kvp=language~kor&kvp=profile~p1",
+            "right_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/f325nk61.live.quortex.io/fast_ch2/1080p50/dash_no_multi/index.mpd?channelId=204&PAID=dai.com&daiEnabled=true&kvp=language~kor&kvp=profile~p2"
         },
         {
             "demo_scene": "11",
@@ -199,8 +199,8 @@
             "right_title": "Mid-roll Spots",
             "right_segment": "Profile: P2",
             "right_flag": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Flag_of_Israel.svg",
-            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/keshet/Syna_Keshet.mpd?channelId=201&PAID=ads1&daiEnabled=true&kvp=language~heb&kvp=profile~p1",
-            "right_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/keshet/Syna_Keshet.mpd?channelId=204&PAID=ads1&daiEnabled=true&kvp=language~heb&kvp=profile~p2"
+            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/keshet/Syna_Keshet.mpd?channelId=201&PAID=dai.com&daiEnabled=true&kvp=language~heb&kvp=profile~p1",
+            "right_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/keshet/Syna_Keshet.mpd?channelId=204&PAID=dai.com&daiEnabled=true&kvp=language~heb&kvp=profile~p2"
         },
         {
             "demo_scene": "15",
@@ -292,11 +292,11 @@
             "right_segment": "Profile: P2 [ITA]",
             "right_flag": "https://upload.wikimedia.org/wikipedia/en/0/03/Flag_of_Italy.svg",
             "max_channels": "0",
-            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/livemds.cb.ticdn.it/Content/DASH/live/channel(noveafdtest)/manifest.mpd?PAID=ads1&channelId=201&daiEnabled=true&kvp=country~UEA&kvp=language~arb&kvp=profile~p1",
+            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/livemds.cb.ticdn.it/Content/DASH_DASH/live/channel(fast_test)/manifestADV.mpd?hhid=sub_100067&PAID=dai.com&daiEnabled=true",
             "left_playback_url_1": "",
             "left_playback_url_2": "",
             "left_ads_url": "",
-            "right_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/livemds.cb.ticdn.it/Content/DASH/live/channel(noveafdtest)/manifest.mpd?PAID=ads1&channelId=204&daiEnabled=true&kvp=country~UEA&kvp=language~arb&kvp=profile~p2",
+            "right_playback_url": "https://livemds.cb.ticdn.it/Content/DASH_DASH/live/channel(fast_test)/manifestADV.mpd",
             "right_playback_url_1": "",
             "right_playback_url_2": "",
             "right_ads_url": ""
@@ -317,11 +317,11 @@
             "special_header": {
                 "Globo-Checksum": "77e79560b8170698b47d2f420af0a3ee"
             },
-            "left_playback_url": "http://vod-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/voslab.live.nowonline.com.br/Content/dsc7/VOD/15849/1498/7fc35a83-38bb-4564-9509-ea386b90923d/c039d313-474b-1e6c-6396-558c9f7b0017/manifest.mpd?PID=dai.com&optin=true&daiEnabled=true&kvp=country~BRA&kvp=profile~p1",
+            "left_playback_url": "http://vod-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/voslab.live.nowonline.com.br/Content/dsc7/VOD/15849/1498/7fc35a83-38bb-4564-9509-ea386b90923d/c039d313-474b-1e6c-6396-558c9f7b0017/manifest.mpd?PID=dai.com&optin=true&daiEnabled=true&kvp=country~BRA&kvp=adForm~video&kvp=profile~p1",
             "left_playback_url_1": "",
             "left_playback_url_2": "",
             "left_ads_url": "",
-            "right_playback_url": "http://vod-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/voslab.live.nowonline.com.br/Content/dsc7/VOD/15849/1498/7fc35a83-38bb-4564-9509-ea386b90923d/c039d313-474b-1e6c-6396-558c9f7b0017/manifest.mpd?PID=dai.com&optin=true&daiEnabled=true&kvp=country~BRA&kvp=profile~p2",
+            "right_playback_url": "http://vod-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/voslab.live.nowonline.com.br/Content/dsc7/VOD/15849/1498/7fc35a83-38bb-4564-9509-ea386b90923d/c039d313-474b-1e6c-6396-558c9f7b0017/manifest.mpd?PID=dai.com&optin=true&daiEnabled=true&kvp=country~BRA&kvp=adForm~video&kvp=profile~p2",
             "right_playback_url_1": "",
             "right_playback_url_2": "",
             "right_ads_url": ""
@@ -331,7 +331,7 @@
             "type":"LINEAR",
             "postroll_offset": 0,
             "menu_title": "Profile 1|2: ZAF",
-            "great_title": "AfroLand TV Spot Mid-roll, SCTE35 on demand",
+            "great_title": "TBN Africa TV Spot Mid-roll, SCTE35 on demand",
             "left_title": "Mid-roll Spots",
             "left_segment":"Profile: P1 [ZAF]",
             "left_flag": "https://upload.wikimedia.org/wikipedia/commons/a/af/Flag_of_South_Africa.svg",
@@ -339,11 +339,11 @@
             "right_segment": "Profile: P2 [ZAF]",
             "right_flag": "https://upload.wikimedia.org/wikipedia/commons/a/af/Flag_of_South_Africa.svg",
             "max_channels": "0",
-            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/mqitwktu.live.quortex.io/afroLand_tv/1080_1_aud_0_sub/nga_afroland_enc_dash/index.mpd?channelId=204&hhid=sub_100067&PAID=ads1&daiEnabled=true",
+            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/mqitwktu.live.quortex.io/tbn_africa/1080_1_aud_0_sub/clear_dash_scte-test/index.mpd?channelId=204&hhid=sub_100067&PAID=ads1&daiEnabled=true",
             "left_playback_url_1": "",
             "left_playback_url_2": "",
             "left_ads_url": "",
-            "right_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/mqitwktu.live.quortex.io/afroLand_tv/1080_1_aud_0_sub/nga_afroland_enc_dash/index.mpd?channelId=204&hhid=6209804952225ab3d14348307b5a4a27&PAID=ads1&daiEnabled=true",
+            "right_playback_url": "https://mqitwktu.live.quortex.io/tbn_africa/1080_1_aud_0_sub/clear_dash_scte-test/index.mpd",
             "right_playback_url_1": "",
             "right_playback_url_2": "",
             "right_ads_url": ""
@@ -364,11 +364,11 @@
             "special_header": {
                 "Globo-Checksum": "77e79560b8170698b47d2f420af0a3ee"
             },            
-            "left_playback_url": "http://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/streamweb-live.clarocdn.com.br/Content/Channel/DAI02/dsc2/manifest.mpd?channelId=204&hhid=sub_100067&PAID=ads1&daiEnabled=true",
+            "left_playback_url": "http://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/18.185.57.248/proxy/Content/Channel/DAI02/dsc2/manifest.mpd?channelId=204&hhid=sub_100067&PAID=ads1&daiEnabled=true",
             "left_playback_url_1": "",
             "left_playback_url_2": "",
             "left_ads_url": "",
-            "right_playback_url": "http://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/streamweb-live.clarocdn.com.br/Content/Channel/DAI02/dsc2/manifest.mpd?channelId=204&hhid=6209804952225ab3d14348307b5a4a27&PAID=ads1&daiEnabled=true",
+            "right_playback_url": "",
             "right_playback_url_1": "",
             "right_playback_url_2": "",
             "right_ads_url": ""

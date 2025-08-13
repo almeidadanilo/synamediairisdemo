@@ -3,6 +3,81 @@ import dashjs from 'dashjs';
 import axios from 'axios';
 import dt from './data.json';
 
+const CheckIcon = () => (
+    <svg viewBox="0 0 24 24" className="w-6 h-6">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="#1976d2" strokeWidth="2" />
+        <polyline points="8,12 11,15 16,9" fill="none" stroke="#1976d2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
+
+const InfoPanel = ({
+                    title,
+                    segment,
+                    flag,
+                    isAd,
+                    advertName
+                }) => (
+    <div className="bg-white/80 backdrop-blur rounded-lg shadow-md ring-1 ring-black/5 px-4 py-3 text-center font-poppins">
+        {/* Title + Segment + Optional Flag */}
+        <div className="flex flex-col items-center space-y-2">
+            <div className="flex items-center space-x-3">
+                <h2 className="text-lg font-semibold text-gray-800">
+                    {title} &amp; {segment}
+                </h2>
+                {flag && flag !== '' && (
+                    <img
+                        src={flag}
+                        alt="Flag"
+                        className="w-[50px] h-[25px] object-contain"
+                    />
+                )}
+            </div>
+            {/* Stream Type */}
+            <label className="text-gray-700">
+                Stream Type:{' '}
+                <b className="text-gray-900">
+                    {isAd ? `:: AD :: ${advertName}` : 'Content'}
+                </b>
+            </label>
+        </div>
+    </div>
+);
+
+const AdEventPanel = ({ labels }) => {
+  // labels is your leftTrackingLabels / rightTrackingLabels object
+  const items = [
+    { key: "impression", label: "Impression" },
+    { key: "adstart", label: "ADSTART" },
+    { key: "firstQuartile", label: "25%" },
+    { key: "secondQuartile", label: "50%" },
+    { key: "thirdQuartile", label: "75%" },
+    { key: "completion", label: "ADCOMPL" },
+  ];
+
+  return (
+    <div className="bg-gray-100/90 rounded-xl shadow-md ring-1 ring-black/5 px-4 py-3 md:px-5 md:py-4">
+      <div className="flex divide-x divide-gray-300">
+        {items.map((it, idx) => {
+          const val = labels?.[it.key];
+          const hit = Boolean(val);
+          return (
+            <div key={it.key} className="flex-1 px-3 text-center">
+              <div className="text-gray-700 font-medium">{it.label}</div>
+              <div className="mt-2 flex justify-center">
+                {hit ? (
+                  <CheckIcon className="w-6 h-6" />
+                ) : (
+                  <span className="text-blue-600 text-xl leading-none">–</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 // Vod - Component for Video on Demand pre/mid/post roll Demo Use Cases
 
 const Vod = ({input_index}) => {
@@ -564,17 +639,6 @@ const Vod = ({input_index}) => {
                 intervalRightRef.current = null;
             }
         } else {
-            /*
-            console.log("A");
-            console.log(leftPlayer.current);
-            if (!leftPlayer.current?.getSource()) {
-                console.log("B");
-                leftPlayer.current.initialize(leftVideoRef.current, buildURL(leftUrl, 'l'), true);
-                console.log("C");
-            }
-            if (!rightPlayer.current?.getSource()) {
-                rightPlayer.current.initialize(leftVideoRef.current, buildURL(rightUrl, 'l'), false);
-            }*/
 
             const playLeft = leftVideoRef.current?.play();
             const playRight = rightVideoRef.current?.play();
@@ -634,13 +698,6 @@ const Vod = ({input_index}) => {
                 rightPlayer.current.updateSettings({
                     streaming: { xhr: requestModifier }
                 });
-                /*const requestModifier = new dashjs.RequestModifier();
-                for (const key in headers) {
-                    requestModifier.addCustomRequestHeader(key, headers[key]);
-                }
-                leftPlayer.current.setRequestModifier(requestModifier);
-                rightPlayer.current.setRequestModifier(requestModifier);
-                */               
             }
             //
             url = buildURL(leftUrl, 'l');
@@ -713,11 +770,13 @@ const Vod = ({input_index}) => {
 
       const getData = async (url) => {
         try {
+            /*
             const response = await axios.get(url, {headers:{
                 'Access-Control-Allow-Origin': '*',
                 'Content-Type':'application/json'
             }});
-            //console.log(response.data);
+            */
+            const response = await axios.get(url);
             return response.status;
         } catch (error) {
             console.error('Error posting data:', error);
@@ -774,115 +833,148 @@ const Vod = ({input_index}) => {
     };
 
     return (
-        <div>
-            <div>
-              <h1>{dt.vod[input_index].great_title}</h1>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div
+            className="relative min-h-screen bg-cover bg-center font-poppins"
+            style={{ backgroundImage: "url('/SplashScreenBG.png')" }}
+        >
+            {/* semi-transparent overlay */}
+            <div className="absolute inset-0 bg-white/35"></div>
+            
+            {/* All VOD content stays above overlay */}
+            <div className="relative z-10 text-white">
                 <div>
-                    <h2>{dt.vod[input_index].left_title} & {dt.vod[input_index].left_segment}
-                        {dt.vod[input_index].left_flag !== '' && (
-                            <img
-                                src={dt.vod[input_index].left_flag}
-                                alt="Left Flag"
-                                style={{ width: '50px', height: '25px', objectFit: 'contain' }}
-                            />
-                        )}
-                    </h2>
-                    <label>Stream Type: <b>{leftStreamIsAd ? ' :: AD :: ' + leftCurrentAdvert : 'Content'}</b></label><br/>
+                    <h1 className="font-poppins font-bold text-center text-3xl">{dt.vod[input_index].great_title}</h1>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <div>
-                        <table className="w-full text-sm text-left text-gray-700 border border-gray-200">
-                            <thead className="text-xs uppercase bg-gray-50 text-gray-500">
-                                <tr>
-                                    <th scope="col" className="px-6 py-3">Impression</th>
-                                    <th scope="col" className="px-6 py-3">AdStart</th>
-                                    <th scope="col" className="px-6 py-3">25%</th>
-                                    <th scope="col" className="px-6 py-3">50%</th>
-                                    <th scope="col" className="px-6 py-3">75%</th>
-                                    <th scope="col" className="px-6 py-3">AdCompl.</th>
-                                </tr>                                
-                            </thead>
-                            <tbody>
-                                <tr className="hover:bg-gray-100">
-                                    <td className="px-6 py-4">{leftTrackingLabels.impression === '' ? '-' : leftTrackingLabels.impression}</td>
-                                    <td className="px-6 py-4">{leftTrackingLabels.adstart === '' ? '-' : leftTrackingLabels.adstart}</td>
-                                    <td className="px-6 py-4">{leftTrackingLabels.firstQuartile === '' ? '-' : leftTrackingLabels.firstQuartile}</td>
-                                    <td className="px-6 py-4">{leftTrackingLabels.secondQuartile === '' ? '-' : leftTrackingLabels.secondQuartile}</td>
-                                    <td className="px-6 py-4">{leftTrackingLabels.thirdQuartile === '' ? '-' : leftTrackingLabels.thirdQuartile}</td>
-                                    <td className="px-6 py-4">{leftTrackingLabels.completion === '' ? '-' : leftTrackingLabels.completion}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>                     
-                    <div> 
-                      <video ref={leftVideoRef} controls preload="none" style={{ width: '750px' }} />
+                        <InfoPanel
+                            title={dt.vod[input_index].left_title}
+                            segment={dt.vod[input_index].left_segment}
+                            flag={dt.vod[input_index].left_flag}
+                            isAd={leftStreamIsAd}
+                            advertName={leftCurrentAdvert}
+                        />
+                        {/*
+                        <h2>{dt.vod[input_index].left_title} & {dt.vod[input_index].left_segment}
+                            {dt.vod[input_index].left_flag !== '' && (
+                                <img
+                                    src={dt.vod[input_index].left_flag}
+                                    alt="Left Flag"
+                                    style={{ width: '50px', height: '25px', objectFit: 'contain' }}
+                                />
+                            )}
+                        </h2>
+                        <label>Stream Type: <b>{leftStreamIsAd ? ' :: AD :: ' + leftCurrentAdvert : 'Content'}</b></label><br/>
+                        */}
+                        <div>
+                            <AdEventPanel labels={leftTrackingLabels} />
+                            {/*
+                            <table className="w-full text-sm text-left text-gray-700 border border-gray-200">
+                                <thead className="text-xs uppercase bg-gray-50 text-gray-500">
+                                    <tr>
+                                        <th scope="col" className="px-6 py-3">Impression</th>
+                                        <th scope="col" className="px-6 py-3">AdStart</th>
+                                        <th scope="col" className="px-6 py-3">25%</th>
+                                        <th scope="col" className="px-6 py-3">50%</th>
+                                        <th scope="col" className="px-6 py-3">75%</th>
+                                        <th scope="col" className="px-6 py-3">AdCompl.</th>
+                                    </tr>                                
+                                </thead>
+                                <tbody>
+                                    <tr className="hover:bg-gray-100">
+                                        <td className="px-6 py-4">{leftTrackingLabels.impression === '' ? '-' : leftTrackingLabels.impression}</td>
+                                        <td className="px-6 py-4">{leftTrackingLabels.adstart === '' ? '-' : leftTrackingLabels.adstart}</td>
+                                        <td className="px-6 py-4">{leftTrackingLabels.firstQuartile === '' ? '-' : leftTrackingLabels.firstQuartile}</td>
+                                        <td className="px-6 py-4">{leftTrackingLabels.secondQuartile === '' ? '-' : leftTrackingLabels.secondQuartile}</td>
+                                        <td className="px-6 py-4">{leftTrackingLabels.thirdQuartile === '' ? '-' : leftTrackingLabels.thirdQuartile}</td>
+                                        <td className="px-6 py-4">{leftTrackingLabels.completion === '' ? '-' : leftTrackingLabels.completion}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            */}
+                        </div>                     
+                        <div> 
+                        <video ref={leftVideoRef} controls preload="none" style={{ width: '750px' }} />
+                        </div>
+                    </div>
+                    <div>
+                        <InfoPanel
+                            title={dt.vod[input_index].right_title}
+                            segment={dt.vod[input_index].right_segment}
+                            flag={dt.vod[input_index].right_flag}
+                            isAd={rightStreamIsAd}
+                            advertName={rightCurrentAdvert}
+                        />
+                        {/*
+                        <h2>{dt.vod[input_index].right_title} & {dt.vod[input_index].right_segment} 
+                            {dt.vod[input_index].right_flag !== '' && (
+                                <img
+                                    src={dt.vod[input_index].right_flag}
+                                    alt="Right Flag"
+                                    style={{ width: '50px', height: '25px', objectFit: 'contain' }}
+                                />
+                            )}
+                        </h2>
+                        <label>Stream Type: <b>{rightStreamIsAd ? ' :: AD :: ' + rightCurrentAdvert : 'Content'}</b></label><br/>
+                        */}
+                        <div>
+                            <AdEventPanel labels={rightTrackingLabels} />
+                            {/*
+                            <table className="w-full text-sm text-left text-gray-700 border border-gray-200">
+                                <thead className="text-xs uppercase bg-gray-50 text-gray-500">
+                                    <tr>
+                                        <th scope="col" className="px-6 py-3">Impression</th>
+                                        <th scope="col" className="px-6 py-3">AdStart</th>
+                                        <th scope="col" className="px-6 py-3">25%</th>
+                                        <th scope="col" className="px-6 py-3">50%</th>
+                                        <th scope="col" className="px-6 py-3">75%</th>
+                                        <th scope="col" className="px-6 py-3">AdCompl.</th>
+                                    </tr>                                
+                                </thead>
+                                <tbody>
+                                    <tr className="hover:bg-gray-100">
+                                        <td className="px-6 py-4">{rightTrackingLabels.impression === '' ? '-' : rightTrackingLabels.impression}</td>
+                                        <td className="px-6 py-4">{rightTrackingLabels.adstart === '' ? '-' : rightTrackingLabels.adstart}</td>
+                                        <td className="px-6 py-4">{rightTrackingLabels.firstQuartile === '' ? '-' : rightTrackingLabels.firstQuartile}</td>
+                                        <td className="px-6 py-4">{rightTrackingLabels.secondQuartile === '' ? '-' : rightTrackingLabels.secondQuartile}</td>
+                                        <td className="px-6 py-4">{rightTrackingLabels.thirdQuartile === '' ? '-' : rightTrackingLabels.thirdQuartile}</td>
+                                        <td className="px-6 py-4">{rightTrackingLabels.completion === '' ? '-' : rightTrackingLabels.completion}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            */}
+                        </div>                    
+                        <div>
+                        <video ref={rightVideoRef} controls preload="none" style={{ width: '750px' }} />
+                        </div>
                     </div>
                 </div>
                 <div>
-                    <h2>{dt.vod[input_index].right_title} & {dt.vod[input_index].right_segment} 
-                        {dt.vod[input_index].right_flag !== '' && (
-                            <img
-                                src={dt.vod[input_index].right_flag}
-                                alt="Right Flag"
-                                style={{ width: '50px', height: '25px', objectFit: 'contain' }}
-                            />
-                        )}
-                    </h2>
-                    <label>Stream Type: <b>{rightStreamIsAd ? ' :: AD :: ' + rightCurrentAdvert : 'Content'}</b></label><br/>
-                    <div>
-                        <table className="w-full text-sm text-left text-gray-700 border border-gray-200">
-                            <thead className="text-xs uppercase bg-gray-50 text-gray-500">
-                                <tr>
-                                    <th scope="col" className="px-6 py-3">Impression</th>
-                                    <th scope="col" className="px-6 py-3">AdStart</th>
-                                    <th scope="col" className="px-6 py-3">25%</th>
-                                    <th scope="col" className="px-6 py-3">50%</th>
-                                    <th scope="col" className="px-6 py-3">75%</th>
-                                    <th scope="col" className="px-6 py-3">AdCompl.</th>
-                                </tr>                                
-                            </thead>
-                            <tbody>
-                                <tr className="hover:bg-gray-100">
-                                    <td className="px-6 py-4">{rightTrackingLabels.impression === '' ? '-' : rightTrackingLabels.impression}</td>
-                                    <td className="px-6 py-4">{rightTrackingLabels.adstart === '' ? '-' : rightTrackingLabels.adstart}</td>
-                                    <td className="px-6 py-4">{rightTrackingLabels.firstQuartile === '' ? '-' : rightTrackingLabels.firstQuartile}</td>
-                                    <td className="px-6 py-4">{rightTrackingLabels.secondQuartile === '' ? '-' : rightTrackingLabels.secondQuartile}</td>
-                                    <td className="px-6 py-4">{rightTrackingLabels.thirdQuartile === '' ? '-' : rightTrackingLabels.thirdQuartile}</td>
-                                    <td className="px-6 py-4">{rightTrackingLabels.completion === '' ? '-' : rightTrackingLabels.completion}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>                    
-                    <div>
-                      <video ref={rightVideoRef} controls preload="none" style={{ width: '750px' }} />
-                    </div>
+                    <button onClick={handleReinitialize} className="bg-blue-600 text-white px-4 py-2 rounded transition hover:bg-blue-700 disabled:bg-gray-400 disabled:text-gray-100 disabled:cursor-not-allowed">
+                        Load/Reload
+                    </button>
+                    <button onClick={handleTogglePlayPause} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+                        {isPlaying ? 'Pause':'Play'}
+                    </button>
+                    <button onClick={handleStop} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+                        Stop
+                    </button>
+                    <button onClick={() => handleCT('l')} disabled={!leftCTEnabledRef.current} className="bg-blue-600 text-white px-4 py-2 rounded transition hover:bg-blue-700 disabled:bg-gray-400 disabled:text-gray-100 disabled:cursor-not-allowed">
+                        Left player clicktrough
+                    </button>
+                    <button onClick={() => handleCT('r')} disabled={!rightCTEnabledRef.current} className="bg-blue-600 text-white px-4 py-2 rounded transition hover:bg-blue-700 disabled:bg-gray-400 disabled:text-gray-100 disabled:cursor-not-allowed">
+                        Right player clickthrough
+                    </button>
+                    <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" onClick={handleToggleLeftVolume}>
+                        L: {leftVolumeLabel}
+                    </button>
+                    <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" onClick={handleToggleRightVolume}>
+                        R: {rightVolumeLabel}
+                    </button>
+                    <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" onClick={handleSkipToPostroll}>
+                        Skip
+                    </button>
                 </div>
-            </div>
-            <div>
-                <button onClick={handleReinitialize} className="bg-blue-600 text-white px-4 py-2 rounded transition hover:bg-blue-700 disabled:bg-gray-400 disabled:text-gray-100 disabled:cursor-not-allowed">
-                    Load/Reload
-                </button>
-                <button onClick={handleTogglePlayPause} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
-                    {isPlaying ? 'Pause':'Play'}
-                </button>
-                <button onClick={handleStop} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
-                    Stop
-                </button>
-                <button onClick={() => handleCT('l')} disabled={!leftCTEnabledRef.current} className="bg-blue-600 text-white px-4 py-2 rounded transition hover:bg-blue-700 disabled:bg-gray-400 disabled:text-gray-100 disabled:cursor-not-allowed">
-                    Left player clicktrough
-                </button>
-                <button onClick={() => handleCT('r')} disabled={!rightCTEnabledRef.current} className="bg-blue-600 text-white px-4 py-2 rounded transition hover:bg-blue-700 disabled:bg-gray-400 disabled:text-gray-100 disabled:cursor-not-allowed">
-                    Right player clickthrough
-                </button>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" onClick={handleToggleLeftVolume}>
-                    L: {leftVolumeLabel}
-                </button>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" onClick={handleToggleRightVolume}>
-                    R: {rightVolumeLabel}
-                </button>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" onClick={handleSkipToPostroll}>
-                    Skip
-                </button>
             </div>
         </div>
     );

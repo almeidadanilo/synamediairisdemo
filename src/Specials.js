@@ -2,7 +2,81 @@ import React, { useEffect, useRef, useState } from 'react';
 import dashjs from 'dashjs';
 import axios from 'axios';
 import dt from './data.json';
-import { use } from 'react';
+
+const CheckIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-6 h-6">
+    <circle cx="12" cy="12" r="9" fill="none" stroke="#1976d2" strokeWidth="2" />
+    <polyline points="8,12 11,15 16,9" fill="none" stroke="#1976d2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const InfoPanel = ({
+                    title,
+                    segment,
+                    flag,
+                    isAd,
+                    advertName
+                }) => (
+    <div className="bg-white/80 backdrop-blur rounded-lg shadow-md ring-1 ring-black/5 px-4 py-3 text-center font-poppins">
+        {/* Title + Segment + Optional Flag */}
+        <div className="flex flex-col items-center space-y-2">
+            <div className="flex items-center space-x-3">
+                <h2 className="text-lg font-semibold text-gray-800">
+                    {title} &amp; {segment}
+                </h2>
+                {flag && flag !== '' && (
+                    <img
+                        src={flag}
+                        alt="Flag"
+                        className="w-[50px] h-[25px] object-contain"
+                    />
+                )}
+            </div>
+            {/* Stream Type */}
+            <label className="text-gray-700">
+                Stream Type:{' '}
+                <b className="text-gray-900">
+                    {isAd ? `:: AD :: ${advertName}` : 'Content'}
+                </b>
+            </label>
+        </div>
+    </div>
+);
+
+const AdEventPanel = ({ labels }) => {
+  // labels is your leftTrackingLabels / rightTrackingLabels object
+  const items = [
+    { key: "impression", label: "Impression" },
+    { key: "adstart", label: "ADSTART" },
+    { key: "firstQuartile", label: "25%" },
+    { key: "secondQuartile", label: "50%" },
+    { key: "thirdQuartile", label: "75%" },
+    { key: "completion", label: "ADCOMPL" },
+  ];
+
+  return (
+    <div className="bg-gray-100/90 rounded-xl shadow-md ring-1 ring-black/5 px-4 py-3 md:px-5 md:py-4">
+      <div className="flex divide-x divide-gray-300">
+        {items.map((it, idx) => {
+          const val = labels?.[it.key];
+          const hit = Boolean(val);
+          return (
+            <div key={it.key} className="flex-1 px-3 text-center">
+              <div className="text-gray-700 font-medium">{it.label}</div>
+              <div className="mt-2 flex justify-center">
+                {hit ? (
+                  <CheckIcon className="w-6 h-6" />
+                ) : (
+                  <span className="text-blue-600 text-xl leading-none">–</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 // Specials - Component for VOD ad on pause and ad overlay Demo Use Cases
 
@@ -830,10 +904,11 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
       // Handle the HTTPS GET request to Iris ADS
       const getVast = async (url) => {
         try {
-            const response = await axios.get(url, {headers:{
+            /*const response = await axios.get(url, {headers:{
                 'Access-Control-Allow-Origin': '*',
                 'Content-Type':'application/json'
-            }});
+            }});*/
+            const response = await axios.get(url);
             return response;
         } catch (error) {
             console.error('Error posting data:', error);
@@ -844,10 +919,11 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
       // Handle the HTTPS GET for the ad beacons
       const getData = async (url) => {
         try {
-            const response = await axios.get(url, {headers:{
+            /*const response = await axios.get(url, {headers:{
                 'Access-Control-Allow-Origin': '*',
                 'Content-Type':'application/json'
-            }});
+            }});*/
+            const response = await axios.get(url);
             //console.log(response.data);
             return response.status;
         } catch (error) {
@@ -879,194 +955,187 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
     
 
     return (
-        <div>
-            <div>
-              <h1>{dt.vod[input_index].great_title}</h1>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div
+            className="relative min-h-screen bg-cover bg-center font-poppins"
+            style={{ backgroundImage: "url('/SplashScreenBG.png')" }}        
+        >
+            {/* semi-transparent overlay */}
+            <div className="absolute inset-0 bg-white/35"></div>
+
+            {/* All VOD content stays above overlay */}
+            <div className="relative z-10 text-white">        
                 <div>
-                    <h2>{dt.vod[input_index].left_title} & {dt.vod[input_index].left_segment} </h2>
-                    <label>Stream Type: <b>{leftStreamIsAd ? ' :: AD :: ' + leftCurrentAdvert : streamTypeMsg}</b></label><br/>
+                    <h1 className="font-poppins font-bold text-center text-3xl">{dt.vod[input_index].great_title}</h1>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <div>
-                        <table className="w-full text-sm text-left text-gray-700 border border-gray-200">
-                            <thead className="text-xs uppercase bg-gray-50 text-gray-500">
-                                <tr>
-                                    <th scope="col" className="px-6 py-3">Impression</th>
-                                    <th scope="col" className="px-6 py-3">AdStart</th>
-                                    <th scope="col" className="px-6 py-3">25%</th>
-                                    <th scope="col" className="px-6 py-3">50%</th>
-                                    <th scope="col" className="px-6 py-3">75%</th>
-                                    <th scope="col" className="px-6 py-3">AdCompl.</th>
-                                </tr>                                
-                            </thead>
-                            <tbody>
-                                <tr className="hover:bg-gray-100">
-                                    <td className="px-6 py-4">{leftTrackingLabels.impression === '' ? '-' : leftTrackingLabels.impression}</td>
-                                    <td className="px-6 py-4">{leftTrackingLabels.adstart === '' ? '-' : leftTrackingLabels.adstart}</td>
-                                    <td className="px-6 py-4">{leftTrackingLabels.firstQuartile === '' ? '-' : leftTrackingLabels.firstQuartile}</td>
-                                    <td className="px-6 py-4">{leftTrackingLabels.secondQuartile === '' ? '-' : leftTrackingLabels.secondQuartile}</td>
-                                    <td className="px-6 py-4">{leftTrackingLabels.thirdQuartile === '' ? '-' : leftTrackingLabels.thirdQuartile}</td>
-                                    <td className="px-6 py-4">{leftTrackingLabels.completion === '' ? '-' : leftTrackingLabels.completion}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <div className="flex items-center space-x-4 mt-4">
-                            <button
-                                onClick={() => {
-                                setIsStartSelected(true);
-                                toggleModeRef.current = "start";
-                                }}
-                                className={`px-4 py-2 rounded-full text-white ${isStartSelected ? 'bg-green-600' : 'bg-gray-400'}`}
-                            >
-                                Start
-                            </button>
-                            <button
-                                onClick={() => {
-                                setIsStartSelected(false);
-                                toggleModeRef.current = "resume";
-                                }}
-                                className={`px-4 py-2 rounded-full text-white ${!isStartSelected ? 'bg-green-600' : 'bg-gray-400'}`}
-                            >
-                                Resume
-                            </button>
-                        </div>
-                        <br />
-                    </div>
-                    <div style={{ position: 'relative', width: '750px', height: 'auto' }}> 
-                        <video ref={leftVideoRef} controls preload="none" style={{ width: '100%', display: 'block' }} />
-                            {showBlackCover && (
-                                <div
-                                    style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        left: 0,
-                                        width: '100%',
-                                        height: '100%',
-                                        backgroundColor: 'black',
-                                        zIndex: 8,
-                                        pointerEvents: 'none'
+                        <InfoPanel
+                            title={dt.vod[input_index].left_title}
+                            segment={dt.vod[input_index].left_segment}
+                            flag={dt.vod[input_index].left_flag}
+                            isAd={leftStreamIsAd}
+                            advertName={leftCurrentAdvert}
+                        />
+                        <div>
+                            <AdEventPanel labels={leftTrackingLabels} />
+                            <div className="flex items-center space-x-4 mt-4">
+                                <button
+                                    onClick={() => {
+                                        setIsStartSelected(true);
+                                        toggleModeRef.current = "start";
                                     }}
-                                />
-                            )}                        
-                            {liveOverlayUrl && (
-                                <img
-                                    src={liveOverlayUrl}
-                                        alt="Live Overlay"
-                                        style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        left: 0,
-                                        width: '100%',
-                                        height: '20%',
-                                        objectFit: 'fill',
-                                        zIndex: 12,
-                                        pointerEvents: 'none',
-                                        transition: 'opacity 0.3s ease-in-out'
-                                    }}
-                                />
-                            )}                      
-                            {(leftOverlayImg || prevOverlayImg) && (
-                                <>
-                                {prevOverlayImg && (
-                                    <img
-                                        src={prevOverlayImg}
-                                        alt="Previous Overlay"
-                                        style={{
-                                            position: 'absolute',
-                                            top: 0,
-                                            left: 0,
-                                            width: '100%',
-                                            height: '100%',
-                                            objectFit: 'cover',
-                                            pointerEvents: 'none',
-                                            zIndex: 9,
-                                            opacity: overlayVisible ? 0 : 1,
-                                            transition: 'opacity 0.5s ease-in-out'
-                                        }}
-                                    />
-                                )}
-                                {leftOverlayImg && (
-                                    <img
-                                        src={leftOverlayImg}
-                                        alt="Overlay Ad"
-                                        style={{
-                                            position: 'absolute',
-                                            top: 0,
-                                            left: 0,
-                                            width: '100%',
-                                            height: '100%',
-                                            objectFit: 'cover',
-                                            pointerEvents: 'none',
-                                            zIndex: 10,
-                                            opacity: overlayVisible ? 1 : 0,
-                                            transition: 'opacity 0.5s ease-in-out'
-                                        }}
-                                    />
-                                )}
-                                </>
-                            )}
-                            {(leftOverlayImg || prevOverlayImg) && (
-                                <div
-                                    style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        left: 0,
-                                        width: '100%',
-                                        height: '15%',
-                                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                                        zIndex: 11,
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        color: 'white',
-                                        fontSize: '20px',
-                                        textAlign: 'center',
-                                        padding: '20px',
-                                        pointerEvents: 'none' // Allows clicks to pass through to video
-                                    }}
+                                    className={`px-4 py-2 rounded-full text-white ${isStartSelected ? 'bg-green-600' : 'bg-gray-400'}`}
                                 >
-                                    <p>
-                                        Enjoy this moment of pause sponsored by <strong>{advertiser}</strong>,<br />
-                                        Rest assured that YES+ is taking care of your playback until you return.
-                                    </p>
-                                </div>
-                            )}
-                            {showAdVideo && (
-                                <video
-                                    ref={overlayAdRef}
-                                    src={''}
-                                    autoPlay = {false}
-                                    onEnded={handleAdVideoEnd}
-                                    style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        left: 0,
-                                        width: '100%',
-                                        height: '100%',
-                                        zIndex: 7,
-                                        backgroundColor: 'black'
+                                    Start
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setIsStartSelected(false);
+                                        toggleModeRef.current = "resume";
                                     }}
-                                />
-                            )}                    
+                                    className={`px-4 py-2 rounded-full text-white ${!isStartSelected ? 'bg-green-600' : 'bg-gray-400'}`}
+                                >
+                                    Resume
+                                </button>
+                            </div>
+                            <br />
+                        </div>
+                        <div style={{ position: 'relative', width: '750px', height: 'auto' }}> 
+                            <video ref={leftVideoRef} controls preload="none" style={{ width: '100%', display: 'block' }} />
+                                {showBlackCover && (
+                                    <div
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            backgroundColor: 'black',
+                                            zIndex: 8,
+                                            pointerEvents: 'none'
+                                        }}
+                                    />
+                                )}                        
+                                {liveOverlayUrl && (
+                                    <img
+                                        src={liveOverlayUrl}
+                                            alt="Live Overlay"
+                                            style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '20%',
+                                            objectFit: 'fill',
+                                            zIndex: 12,
+                                            pointerEvents: 'none',
+                                            transition: 'opacity 0.3s ease-in-out'
+                                        }}
+                                    />
+                                )}                      
+                                {(leftOverlayImg || prevOverlayImg) && (
+                                    <>
+                                    {prevOverlayImg && (
+                                        <img
+                                            src={prevOverlayImg}
+                                            alt="Previous Overlay"
+                                            style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'cover',
+                                                pointerEvents: 'none',
+                                                zIndex: 9,
+                                                opacity: overlayVisible ? 0 : 1,
+                                                transition: 'opacity 0.5s ease-in-out'
+                                            }}
+                                        />
+                                    )}
+                                    {leftOverlayImg && (
+                                        <img
+                                            src={leftOverlayImg}
+                                            alt="Overlay Ad"
+                                            style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'cover',
+                                                pointerEvents: 'none',
+                                                zIndex: 10,
+                                                opacity: overlayVisible ? 1 : 0,
+                                                transition: 'opacity 0.5s ease-in-out'
+                                            }}
+                                        />
+                                    )}
+                                    </>
+                                )}
+                                {(leftOverlayImg || prevOverlayImg) && (
+                                    <div
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '15%',
+                                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                                            zIndex: 11,
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            color: 'white',
+                                            fontSize: '20px',
+                                            textAlign: 'center',
+                                            padding: '20px',
+                                            pointerEvents: 'none' // Allows clicks to pass through to video
+                                        }}
+                                    >
+                                        <p>
+                                            Enjoy this moment of pause sponsored by <strong>{advertiser}</strong>,<br />
+                                            Rest assured that YES+ is taking care of your playback until you return.
+                                        </p>
+                                    </div>
+                                )}
+                                {showAdVideo && (
+                                    <video
+                                        ref={overlayAdRef}
+                                        src={''}
+                                        autoPlay = {false}
+                                        onEnded={handleAdVideoEnd}
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            zIndex: 7,
+                                            backgroundColor: 'black'
+                                        }}
+                                    />
+                                )}                    
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div>
-                <button onClick={handleReinitialize} className="bg-blue-600 text-white px-4 py-2 rounded transition hover:bg-blue-700 disabled:bg-gray-400 disabled:text-gray-100 disabled:cursor-not-allowed">
-                    Load/Reload
-                </button>
-                <button onClick={handleTogglePlayPause} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
-                    {isPlaying ? 'Pause':'Play'}
-                </button>
-                <button onClick={handleStop} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
-                    Stop
-                </button>
-                <button onClick={() => handleCT('l')} disabled={!leftCTEnabledRef.current} className="bg-blue-600 text-white px-4 py-2 rounded transition hover:bg-blue-700 disabled:bg-gray-400 disabled:text-gray-100 disabled:cursor-not-allowed">
-                    Left player clicktrough
-                </button>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" onClick={handleToggleLeftVolume}>
-                    L: {leftVolumeLabel}
-                </button>
+                <div>
+                    <button onClick={handleReinitialize} className="bg-blue-600 text-white px-4 py-2 rounded transition hover:bg-blue-700 disabled:bg-gray-400 disabled:text-gray-100 disabled:cursor-not-allowed">
+                        Load/Reload
+                    </button>
+                    <button onClick={handleTogglePlayPause} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+                        {isPlaying ? 'Pause':'Play'}
+                    </button>
+                    <button onClick={handleStop} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+                        Stop
+                    </button>
+                    <button onClick={() => handleCT('l')} disabled={!leftCTEnabledRef.current} className="bg-blue-600 text-white px-4 py-2 rounded transition hover:bg-blue-700 disabled:bg-gray-400 disabled:text-gray-100 disabled:cursor-not-allowed">
+                        Left player clicktrough
+                    </button>
+                    <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" onClick={handleToggleLeftVolume}>
+                        L: {leftVolumeLabel}
+                    </button>
+                </div>
             </div>
         </div>
     );
