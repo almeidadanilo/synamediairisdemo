@@ -41,6 +41,9 @@ function App() {
             <Route path='/playback21' element={<Linear input_index = {20}/>} />
             <Route path='/playback22' element={<Linear input_index = {21}/>} />
             <Route path="/landing" element={<LandingPage />} />
+            <Route path="/specials4" element={<Specials input_index = {22} inAdPause = {true} inSequence = {'seq1'} inAdOverlay = {false} />} />
+            <Route path="/specials5" element={<Specials input_index = {23} inAdPause = {false} inSequence = {''} inAdOverlay = {true} />} />
+            <Route path="/specials6" element={<Specials input_index = {24} inAdPause = {false} inSequence = {''} inAdOverlay = {false} inAdPauseVideo = {true} />} />
           </Routes>
         </div>
       </div>

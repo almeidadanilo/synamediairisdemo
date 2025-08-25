@@ -116,6 +116,10 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
     const displayAdURL = useRef("");
     const [isStartSelected, setIsStartSelected] = useState(true);
     const toggleModeRef = useRef("start");
+    const zoomTimerRef = useRef(null);
+    const prevZoomRef = useRef(null);
+    const prevScrollRef = useRef(0);
+    const usingTransformRef = useRef(false);    
     const [leftOverlayImg, setLeftOverlayImg] = useState('');
     const [leftCurrentAdvert, setLeftCurrentAdvert] = useState('');
     const [leftTrackingLabels, setLeftTrackingLabels] = useState({
@@ -317,6 +321,23 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
         // Now reinitialize
         initializePlayers();
 
+        return () => {
+            if (zoomTimerRef.current) {
+                clearTimeout(zoomTimerRef.current);
+                zoomTimerRef.current = null;
+            }
+            // restore zoom if we unmount while zoomed
+            try {
+                if (usingTransformRef.current) {
+                    const b = document.body;
+                    b.style.transform = '';
+                    b.style.transformOrigin = '';
+                    b.style.width = '';
+                } else if (prevZoomRef.current != null) {
+                    document.body.style.zoom = prevZoomRef.current;
+                }
+            } catch {}
+        };
     }, [input_index, inAdPause, inSequence]);
   
     // Handling the end of the secondary video playback
@@ -511,8 +532,6 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
         const handlePause = () => {
             console.log('[Specials] Player paused');
             setIsPlaying(false);
-            //resetTrackingLabels('l');
-            //let did = crypto.randomUUID();
             let did = window.crypto?.randomUUID?.() || Math.random().toString(36).substring(2);
             console.log("did=", did);            
             let timestamp = Date.now();
@@ -526,7 +545,7 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                 intervalLeftRef.current = null;
                 // ###################################################
                 if (hasAdOnPause.current) {
-                    displayAdDecision = `https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?transactionId=${timestamp}&deviceId=${did}&sessionId=${timestamp}&position=pre&kvp=language~heb&kvp=profile~p3&kvp=adForm~display`;
+                    displayAdDecision = `https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?transactionId=${timestamp}&deviceId=${did}&sessionId=${timestamp}${dt.vod[input_index].left_display_ad_querystring}`;
                     if (inSequence != '') {
                         handleDisplayAds(displayAdDecision, true);
                     }
@@ -538,7 +557,7 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
             }
             // If the use case is playing a video during the pause 
             else if (inAdPauseVideo && toggleModeRef.current === 'start') {
-                displayAdDecision = `https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?transactionId=${timestamp}&deviceId=${did}&sessionId=${timestamp}&position=pre&kvp=language~heb&kvp=adForm~adPause`;
+                displayAdDecision = `https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?transactionId=${timestamp}&deviceId=${did}&sessionId=${timestamp}${dt.vod[input_index].left_display_ad_querystring}`;
                 handleVideoAds(displayAdDecision, 'onPause');
             }
 
@@ -555,7 +574,7 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
 
             // If the use case is playing a video during the resume of a pause 
             if (inAdPauseVideo && toggleModeRef.current === 'resume') {
-                displayAdDecision = `https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?transactionId=${timestamp}&deviceId=${did}&sessionId=${timestamp}&position=pre&kvp=language~heb&kvp=adForm~adPausePreRoll`;
+                displayAdDecision = `https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?transactionId=${timestamp}&deviceId=${did}&sessionId=${timestamp}${dt.vod[input_index].left_display_ad_querystring_1}`;
                 handleVideoAds(displayAdDecision, 'onResume');
             }
             else {
@@ -728,8 +747,6 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
 
     const buildURL = (url, pl) => {
         let str = '';
-        //let did = crypto.randomUUID();
-        //let did = window.crypto?.randomUUID?.() || Math.random().toString(36).substring(2);
         let did = generateUUID();
 
         console.log("did=", did);
@@ -893,7 +910,6 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                 // Action the Ad Click
                 window.open(ctEvent.ct, '_blank');
                 // Report the Ad Click
-                //console.log('HTTP GET: ' + pl + ' - ' + ctEvent.advert + ' - ' + ctEvent.type + ' - ', ctEvent.url);
                 getData(ctEvent.url);                
             } 
             else {
@@ -904,10 +920,6 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
       // Handle the HTTPS GET request to Iris ADS
       const getVast = async (url) => {
         try {
-            /*const response = await axios.get(url, {headers:{
-                'Access-Control-Allow-Origin': '*',
-                'Content-Type':'application/json'
-            }});*/
             const response = await axios.get(url);
             return response;
         } catch (error) {
@@ -919,10 +931,6 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
       // Handle the HTTPS GET for the ad beacons
       const getData = async (url) => {
         try {
-            /*const response = await axios.get(url, {headers:{
-                'Access-Control-Allow-Origin': '*',
-                'Content-Type':'application/json'
-            }});*/
             const response = await axios.get(url);
             //console.log(response.data);
             return response.status;
@@ -951,6 +959,70 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                 overlayAdRef.current.volume = 0;
             }            
         }
+    };
+
+    const applyZoom = (scale) => {
+        const b = document.body;
+
+        // Save previous states once
+        if (prevZoomRef.current == null) {
+            const computedZoom = getComputedStyle(b).zoom;
+            prevZoomRef.current = computedZoom && computedZoom !== 'normal'
+                ? computedZoom
+                : ''; // empty string == “no zoom set”
+        }
+
+        // Try native zoom (works great on Chrome/Edge)
+        try {
+            b.style.zoom = String(scale);
+            usingTransformRef.current = false;
+            return;
+        } catch (e) {
+            // fall back to transform
+        }
+
+        // Fallback: transform scale + fix width so layout doesn’t overflow
+        usingTransformRef.current = true;
+        b.style.transform = `scale(${scale})`;
+        b.style.transformOrigin = '0 0';
+        b.style.width = `${100 / scale}%`;
+    };
+
+    const revertZoom = () => {
+        const b = document.body;
+        if (usingTransformRef.current) {
+            b.style.transform = '';
+            b.style.transformOrigin = '';
+            b.style.width = '';
+            usingTransformRef.current = false;
+        } else {
+            b.style.zoom = prevZoomRef.current ?? '';
+        }
+        prevZoomRef.current = null;
+    };
+
+    const handleTempZoom = () => {
+        // prevent stacking
+        if (zoomTimerRef.current) return;
+
+        // remember current scroll
+        prevScrollRef.current = window.scrollY;
+
+        // zoom in
+        applyZoom(2);
+
+        // scroll to the middle (center the viewport around the middle)
+        const doc = document.documentElement;
+        const full = Math.max(doc.scrollHeight, document.body.scrollHeight);
+        const midTop = Math.max(0, (full - window.innerHeight) / 2);
+        window.scrollTo({ top: midTop, behavior: 'smooth' });
+
+        // hold for 5s then restore
+        zoomTimerRef.current = setTimeout(() => {
+            revertZoom();
+            window.scrollTo({ top: prevScrollRef.current, behavior: 'smooth' });
+            zoomTimerRef.current = null;
+        }, 5000);
     };
     
 
@@ -1017,21 +1089,35 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                                     />
                                 )}                        
                                 {liveOverlayUrl && (
-                                    <img
-                                        src={liveOverlayUrl}
-                                            alt="Live Overlay"
-                                            style={{
+                                    <div
+                                        style={{
                                             position: 'absolute',
                                             top: 0,
                                             left: 0,
                                             width: '100%',
                                             height: '20%',
-                                            objectFit: 'fill',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
                                             zIndex: 12,
                                             pointerEvents: 'none',
-                                            transition: 'opacity 0.3s ease-in-out'
+                                            transition: 'opacity 0.3s ease-in-out',
+                                            backgroundColor: 'transparent'
                                         }}
-                                    />
+                                    >
+                                        <img
+                                            src={liveOverlayUrl}
+                                            alt="Live Overlay"
+                                            style={{
+                                                maxHeight: '100%',
+                                                maxWidth: '100%',
+                                                width: 'auto',
+                                                height: 'auto',
+                                                objectFit: 'contain',
+                                                imageRendering: 'pixelated', // keeps likes of QR sharp
+                                            }}
+                                        />
+                                    </div>
                                 )}                      
                                 {(leftOverlayImg || prevOverlayImg) && (
                                     <>
@@ -1095,7 +1181,7 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                                     >
                                         <p>
                                             Enjoy this moment of pause sponsored by <strong>{advertiser}</strong>,<br />
-                                            Rest assured that YES+ is taking care of your playback until you return.
+                                            Rest assured that <strong>{dt.vod[input_index].left_MSO_Name}</strong> is taking care of your playback until you return.
                                         </p>
                                     </div>
                                 )}
@@ -1134,6 +1220,9 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                     </button>
                     <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" onClick={handleToggleLeftVolume}>
                         L: {leftVolumeLabel}
+                    </button>
+                    <button onClick={handleTempZoom} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+                        Zoom
                     </button>
                 </div>
             </div>

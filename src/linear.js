@@ -667,70 +667,80 @@ const Linear = ({input_index}) => {
     };
 
     const handleReinitialize = () => {
-        if (leftPlayer && rightPlayer) {
-            let url = '';    
-            leftPlayer.current.reset();
-            rightPlayer.current.reset();
-            // check for any special header required for the stitching request
-            /*
-            if (dt.vod[input_index] && dt.vod[input_index].special_header) {
-                const headers = dt.vod[input_index].special_header;
-                const requestModifier = {
-                    modifyRequestHeader: function (xhr) {
-                        for (const key in headers) {
-                            if (headers[key]) {
-                                xhr.setRequestHeader(key, headers[key]);
+        try {
+            if (leftPlayer && rightPlayer) {
+                let url = '';    
+                leftPlayer.current.reset();
+                rightPlayer.current.reset();
+                // check for any special header required for the stitching request
+                /*
+                if (dt.vod[input_index] && dt.vod[input_index].special_header) {
+                    const headers = dt.vod[input_index].special_header;
+                    const requestModifier = {
+                        modifyRequestHeader: function (xhr) {
+                            for (const key in headers) {
+                                if (headers[key]) {
+                                    xhr.setRequestHeader(key, headers[key]);
+                                }
                             }
+                            return xhr;
                         }
-                        return xhr;
-                    }
-                };
-                leftPlayer.current.updateSettings({
-                    streaming: { xhr: requestModifier }
-                });
-                rightPlayer.current.updateSettings({
-                    streaming: { xhr: requestModifier }
-                });
+                    };
+                    leftPlayer.current.updateSettings({
+                        streaming: { xhr: requestModifier }
+                    });
+                    rightPlayer.current.updateSettings({
+                        streaming: { xhr: requestModifier }
+                    });
+                }
+                */
+                ///////////////////////////////////////////////////////////////////////
+                url = buildURL(leftUrl, 'l');
+                leftPlayer.current.initialize(leftVideoRef.current, url, false, 0);
+                ///////////////////////////////////////////////////////////////////////
+                url = buildURL(rightUrl, 'r');
+                rightPlayer.current.initialize(rightVideoRef.current, url, false, 0);
             }
-            */
-            ///////////////////////////////////////////////////////////////////////
-            url = buildURL(leftUrl, 'l');
-            leftPlayer.current.initialize(leftVideoRef.current, url, false, 0);
-            ///////////////////////////////////////////////////////////////////////
-            url = buildURL(rightUrl, 'r');
-            rightPlayer.current.initialize(rightVideoRef.current, url, false, 0);
+            setIsPlaying(false);
+            resetTrackingLabels();
         }
-        setIsPlaying(false);
-        resetTrackingLabels();
+        catch (error) {
+            console.error('Error Handling Reinitialize:', error);
+        }
     };
   
     const handleStop = () => {
-        if (intervalLeftRef.current) {
-            clearInterval(intervalLeftRef.current);
-            intervalLeftRef.current = null;
+        try {
+            if (intervalLeftRef.current) {
+                clearInterval(intervalLeftRef.current);
+                intervalLeftRef.current = null;
+            }
+            if (intervalRightRef.current) {
+                clearInterval(intervalRightRef.current);
+                intervalRightRef.current = null;
+            }
+            if (leftPlayer && rightPlayer) {
+                // Stop and reset Dash.js players
+                leftPlayer.current.reset();
+                rightPlayer.current.reset();
+            }
+            if (leftVideoRef.current && rightVideoRef.current) {
+                // Pause and clear video sources
+                leftVideoRef.current.pause();
+                leftVideoRef.current.removeAttribute('src'); // Remove the source
+                leftVideoRef.current.load(); // Force reload (to fully clear)
+                
+                rightVideoRef.current.pause();
+                rightVideoRef.current.removeAttribute('src');
+                rightVideoRef.current.load();
+            }
+            // Reset any tracking states and variables
+            setIsPlaying(false);
+            resetTrackingLabels();
         }
-        if (intervalRightRef.current) {
-            clearInterval(intervalRightRef.current);
-            intervalRightRef.current = null;
+        catch (error) {
+            console.error('Error Handling Stop:', error);
         }
-        if (leftPlayer && rightPlayer) {
-            // Stop and reset Dash.js players
-            leftPlayer.current.reset();
-            rightPlayer.current.reset();
-        }
-        if (leftVideoRef.current && rightVideoRef.current) {
-            // Pause and clear video sources
-            leftVideoRef.current.pause();
-            leftVideoRef.current.removeAttribute('src'); // Remove the source
-            leftVideoRef.current.load(); // Force reload (to fully clear)
-            
-            rightVideoRef.current.pause();
-            rightVideoRef.current.removeAttribute('src');
-            rightVideoRef.current.load();
-        }
-        // Reset any tracking states and variables
-        setIsPlaying(false);
-        resetTrackingLabels();        
     };
   
     const getData = async (url) => {

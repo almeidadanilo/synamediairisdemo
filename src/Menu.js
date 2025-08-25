@@ -19,6 +19,9 @@ function Menu() {
     { label: data.vod[12].menu_title, path: '/specials2' },
     { label: data.vod[14].menu_title, path: '/specials3' },
     { label: data.vod[15].menu_title, path: '/linearcc1' },
+    { label: data.vod[22].menu_title, path: '/specials4' },
+    { label: data.vod[23].menu_title, path: '/specials5' },
+    { label: data.vod[24].menu_title, path: '/specials6' }
   ];
 
   const openMenu = name => setOpen(name);
