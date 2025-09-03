@@ -210,6 +210,18 @@ const Linear = ({input_index}) => {
         }
     }, [rightTrackingEvents, rightStreamIsAd, rightCurrentStream.current]);
       
+    function applyRequestHeaders(player, headers) {
+        if (!headers) return;
+        const mod = {
+            modifyRequestHeader: (xhr) => {
+                Object.entries(headers).forEach(([k, v]) => v && xhr.setRequestHeader(k, v));
+                return xhr;
+            },
+            modifyRequestURL: (url) => url
+        };
+        player.extend('RequestModifier', () => mod, true);
+    }
+
     const updateCurrentTimeLeft = () => {
         
         let pl = leftPlayer.current;
@@ -286,6 +298,7 @@ const Linear = ({input_index}) => {
               logLevel: dashjs.Debug.LOG_LEVEL_NONE // or LOG_LEVEL_ERROR to keep only serious errors
             }
         });
+        applyRequestHeaders(leftPlayer.current, dt.vod[input_index]?.special_header);
         leftPlayer.current.initialize(leftVideoRef.current, buildURL(leftUrl, 'l'), true, 0);
         leftVideoRef.current.muted = true;
         console.log('(LIN) initialize LP');
@@ -311,6 +324,7 @@ const Linear = ({input_index}) => {
               logLevel: dashjs.Debug.LOG_LEVEL_NONE
             }
         });
+        applyRequestHeaders(rightPlayer.current, dt.vod[input_index]?.special_header);
         rightPlayer.current.initialize(rightVideoRef.current, buildURL(rightUrl, 'r'), true, 0);
         rightVideoRef.current.muted = true;
         console.log('(LIN) initialize RP');
@@ -696,9 +710,11 @@ const Linear = ({input_index}) => {
                 */
                 ///////////////////////////////////////////////////////////////////////
                 url = buildURL(leftUrl, 'l');
+                applyRequestHeaders(leftPlayer.current, dt.vod[input_index]?.special_header);
                 leftPlayer.current.initialize(leftVideoRef.current, url, false, 0);
                 ///////////////////////////////////////////////////////////////////////
                 url = buildURL(rightUrl, 'r');
+                applyRequestHeaders(rightPlayer.current, dt.vod[input_index]?.special_header);
                 rightPlayer.current.initialize(rightVideoRef.current, url, false, 0);
             }
             setIsPlaying(false);

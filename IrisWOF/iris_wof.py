@@ -153,7 +153,7 @@ def quickset():
         manual_inputs["inESAMAP"].delete(0, tk.END)
         manual_inputs["inESAMAP"].insert(0, "APCL1")
         manual_inputs["inESAMIP"].delete(0, tk.END)
-        manual_inputs["inESAMIP"].insert(0, "192.168.1.101")
+        manual_inputs["inESAMIP"].insert(0, "192.168.50.210")
         manual_inputs["inESAMPORT"].delete(0, tk.END)
         manual_inputs["inESAMPORT"].insert(0, "9100")
     elif current == '3':
@@ -308,7 +308,9 @@ def capture_special_photo():
     filename = f'../public/specials/{timestamp}.jpg'
     filenameB = f'../build/specials/{timestamp}.jpg'
 
-    cap = cv2.VideoCapture(0)
+    # 0 - built in
+    # 1 - USB
+    cap = cv2.VideoCapture(1)
     if not cap.isOpened():
         print("Cannot open webcam")
         return
@@ -416,8 +418,8 @@ def spin_wheel():
     result_label.config(text=f"🎯 Result: {result}", fg="green" if result != "Special" else "purple")
     
     #result = "SPECIAL"
-    #if result == "120" or result == "90":
-    #    result = "SPECIAL"
+    if result in ["75", "90", "120"]:
+        result = "SPECIAL"
 
     if result == "SPECIAL":
         start_countdown_and_capture()
@@ -492,8 +494,8 @@ def send_ESAM(res, opt):
         ip = '23.129.240.38'
         port = '8105'
     elif opt == "MEG":
-        esamid = 'APMEG'
-        ip = '192.168.0.10'
+        esamid = 'APCL1'
+        ip = '192.168.50.210'
         port = '9100'
     elif opt == "vDCM":
         esamid = 'APVDCM'

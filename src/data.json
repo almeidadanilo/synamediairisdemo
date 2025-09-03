@@ -234,10 +234,12 @@
             "max_channels": "2",
             "left_playback_url_1": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/skiing/Syna_Skiing.mpd?channelId=204&PAID=ads1&daiEnabled=true&kvp=language~heb&kvp=profile~p1",
             "left_playback_url_2": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/redbull/Syna_RedBull.mpd?channelId=204&PAID=ads1&daiEnabled=true&kvp=language~heb&kvp=profile~p1",
-            "left_ads_url": "https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/linear?duration=00:00:10&kvp=adForm~videoChannelChange&kvp=profile~p1&channelId=201",
+            "left_display_ads_url": "https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?position=pre&kvp=adForm~display&kvp=profile~p3&kvp=country~UEA&kvp=sequence~seq3",
+            "left_video_ads_url": "",
             "right_playback_url_1": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/skiing/Syna_Skiing.mpd?channelId=204&PAID=ads1&daiEnabled=true&kvp=language~heb&kvp=profile~p1",
             "right_playback_url_2": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/redbull/Syna_RedBull.mpd?channelId=204&PAID=ads1&daiEnabled=true&kvp=language~heb&kvp=profile~p1",
-            "right_ads_url": "https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/linear?duration=00:00:10&kvp=adForm~videoChannelChange&kvp=profile~p2&channelId=201"
+            "right_display_ads_url": "https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?position=pre&kvp=adForm~display&kvp=profile~p3&kvp=country~UEA&kvp=sequence~seq1",
+            "right_video_ads_url": ""
         },
         {
             "demo_scene": "17",
@@ -343,11 +345,11 @@
             "right_segment": "Profile: P2 [ZAF]",
             "right_flag": "https://upload.wikimedia.org/wikipedia/commons/a/af/Flag_of_South_Africa.svg",
             "max_channels": "0",
-            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/mqitwktu.live.quortex.io/tbn_africa/1080_1_aud_0_sub/clear_dash_scte-test/index.mpd?channelId=204&hhid=sub_100067&PAID=ads1&daiEnabled=true",
+            "left_playback_url": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/mqitwktu.live.quortex.io/blue_pictures/1080_1_aud_0_sub/clear_dash_scte-test/index.mpd?channelId=204&hhid=sub_100067&PAID=ads1&daiEnabled=true",
             "left_playback_url_1": "",
             "left_playback_url_2": "",
             "left_ads_url": "",
-            "right_playback_url": "https://mqitwktu.live.quortex.io/tbn_africa/1080_1_aud_0_sub/clear_dash_scte-test/index.mpd",
+            "right_playback_url": "https://mqitwktu.live.quortex.io/blue_pictures/1080_1_aud_0_sub/clear_dash_scte-test/index.mpd",
             "right_playback_url_1": "",
             "right_playback_url_2": "",
             "right_ads_url": ""
@@ -368,7 +370,7 @@
             "special_header": {
                 "Globo-Checksum": "77e79560b8170698b47d2f420af0a3ee"
             },            
-            "left_playback_url": "http://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/18.185.57.248/proxy/Content/Channel/DAI02/dsc2/manifest.mpd?channelId=204&hhid=sub_100067&PAID=ads1&daiEnabled=true",
+            "left_playback_url": "http://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/streamweb-live.clarocdn.com.br/Content/Channel/DAI02/dsc2/manifest.mpd?channelId=204&hhid=sub_100067&PAID=ads1&daiEnabled=true",
             "left_playback_url_1": "",
             "left_playback_url_2": "",
             "left_ads_url": "",

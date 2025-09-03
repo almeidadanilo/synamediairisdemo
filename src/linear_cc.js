@@ -98,24 +98,37 @@ const LinearCC = ({input_index}) => {
     const leftCCAdvertiser = useRef('');
     const rightCCAdvertiser = useRef('');
     const leftCCPlaybackURL = useRef('');
-    const rightCCPlaybackURL = useRef(''); 
+    const rightCCPlaybackURL = useRef('');
+    const leftStreamActivatedIsFirstTime = useRef(true);
+    const rightStreamActivatedIsFirstTime = useRef(true);
+    const toggleModeRef = useRef("display");
     const [leftUrl, setLeftUrl] = useState('');
     const [rightUrl, setRightUrl] = useState('');
     const [leftVolumeLabel, setLeftVolumeLabel] = useState("5%");
     const [rightVolumeLabel, setRightVolumeLabel] = useState("5%");
     const leftCurrentStream = useRef("");
-    const rightCurrentStream = useRef("");  
+    const rightCurrentStream = useRef(""); 
+    const leftDisplayImage = useRef("");
+    const rightDisplayImage = useRef("");
+    const leftDisplayImpression = useRef("");
+    const rightDisplayImpression = useRef("");
     const leftStreamIsAdRef = useRef(false);
     const rightStreamIsAdRef = useRef(false);
+    const [showLeftDisplayImage, setShowLeftDisplayImage] = useState(false);
+    const [showRightDisplayImage, setShowRightDisplayImage] = useState(false);
     const [leftStreamIsAd, setleftStreamIsAd] = useState(false);  
     const [rightStreamIsAd, setrightStreamIsAd] = useState(false);
     const [leftTrackingEvents, setLeftTrackingEvents] = useState([]);
     const leftTrackingEventsRef = useRef([]);
     const [rightTrackingEvents, setRightTrackingEvents] = useState([]);
     const rightTrackingEventsRef = useRef([]);
+    const [advertiser, setAdvertiser] = useState('');
     const [isPlaying, setIsPlaying] = useState(false);
     const [leftCurrentAdvert, setLeftCurrentAdvert] = useState('');
-    const [rightCurrentAdvert, setRightCurrentAdvert] = useState('');    
+    const [rightCurrentAdvert, setRightCurrentAdvert] = useState('');
+    const [shrinkPlayersLeft, setShrinkPlayersLeft] = useState(false);
+    const [shrinkPlayersRight, setShrinkPlayersRight] = useState(false);
+    const [isDisplaySelected, setIsDisplaySelected] = useState(true);
     const [leftTrackingLabels, setLeftTrackingLabels] = useState({
       impression: '',
       adstart: '',
@@ -133,7 +146,8 @@ const LinearCC = ({input_index}) => {
       completion: ''
     });
     const _INTERVAL_ = 1000;
-    const holdThreshold = 1000; // milliseconds
+    const holdThreshold = 1000;                 // milliseconds
+    const __SHRINK_ANNIMATION__= 10000;         // miliseconds
     //let leftClickHoldTimer = null;
     let leftClickStartTime = null;
     //let rightClickHoldTimer = null;
@@ -369,7 +383,15 @@ const LinearCC = ({input_index}) => {
                     setleftStreamIsAd(false);
                     resetTrackingLabels('l');
                     leftCTEnabledRef.current = false;
-                }                
+                }
+                ///////////////////////////////////////////////////////////////////////////
+                if (!leftStreamActivatedIsFirstTime.current) {
+                    setShrinkPlayersLeft(true);
+                    setTimeout(() => setShrinkPlayersLeft(false), __SHRINK_ANNIMATION__);
+                }
+                else {
+                    leftStreamActivatedIsFirstTime.current = false;
+                }                    
             });
         });
 
@@ -411,7 +433,15 @@ const LinearCC = ({input_index}) => {
                     setrightStreamIsAd(false);
                     resetTrackingLabels('r');
                     rightCTEnabledRef.current = false;
-                }                
+                }
+                ///////////////////////////////////////////////////////////////////////////
+                if (!rightStreamActivatedIsFirstTime.current) {
+                    setShrinkPlayersRight(true);
+                    setTimeout(() => setShrinkPlayersRight(false), __SHRINK_ANNIMATION__);
+                }
+                else{
+                    rightStreamActivatedIsFirstTime.current = false;
+                }
             });            
         });
     }
@@ -522,6 +552,7 @@ const LinearCC = ({input_index}) => {
         //console.log("did=", did);        
         str = url + '&sessionId=SYNAIRISDEMO_' + pl + '_' + input_index.toString() + '_' + (Math.floor(new Date().getTime() / 1000).toString());
         str = str + '&deviceId=' + did
+        str = str + '&transactionId=' + (Math.floor(new Date().getTime() / 1000).toString());
 
         console.log("buildURL: ", str);
 
@@ -849,13 +880,10 @@ const LinearCC = ({input_index}) => {
         return ((hours * 3600 + minutes * 60 + seconds) * 1000) + milliseconds;
     }    
 
-    const processVast = (vast, pos) => {
+    const processDisplayVast = (vast, pos) => {
         try {
             // Check the API response
-            if (vast.status !== 200) {
-                // Not good response
-                return false;
-            }
+            if (vast.status !== 200) {return false;}
             // --------------------------------------
             const xml = vast.data;
             const parser = new DOMParser();
@@ -863,7 +891,59 @@ const LinearCC = ({input_index}) => {
             const ads = xmlDoc.getElementsByTagName("Ad");
             // Check if the response is an empty VAST
             if (ads.length <= 0) {
-                // Empty VAST
+                console.error("Empty Display VAST");
+                return false;
+            }
+            // --------------------------------------
+            const impressions = xmlDoc.getElementsByTagName("Impression");
+            const advertisers = xmlDoc.getElementsByTagName("Advertiser");
+            // Get the image from the impression --------------------------------------
+            for (let i=0; i < impressions.length; i++) {
+                const impUrl = impressions[i].textContent.trim();
+                if (impUrl.includes('.jpeg') || impUrl.includes('.jpg') || impUrl.includes('.png')) {  
+                    if (pos === 'l') {
+                        leftDisplayImage.current = impUrl;
+                    }
+                    else {
+                        rightDisplayImage.current = impUrl;
+                    }
+                } 
+                else if (impUrl.includes('/vod/impression?')) {
+                    if (pos === 'l'){
+                        leftDisplayImpression.current = impUrl;
+                    }
+                    else {
+                        rightDisplayImpression.current = impUrl;
+                    }
+                }
+            }
+            // Get advertiser
+            const advElements = xmlDoc.getElementsByTagName("Advertiser");
+            if (advElements.length > 0) {
+                setAdvertiser(advElements[0].textContent.trim());
+            } else {
+                setAdvertiser('Synamedia Iris'); // fallback if missing
+            }
+            return true;
+        }
+        catch (error) {
+            console.error("Error processing the display VAST: ", pos, error);
+            return false;
+        }            
+    };
+
+    const processVast = (vast, pos) => {
+        try {
+            // Check the API response
+            if (vast.status !== 200) {return false;}
+            // --------------------------------------
+            const xml = vast.data;
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xml, "application/xml");
+            const ads = xmlDoc.getElementsByTagName("Ad");
+            // Check if the response is an empty VAST
+            if (ads.length <= 0) {
+                console.error("Empty Video VAST");
                 return false;
             }
             // --------------------------------------
@@ -977,7 +1057,7 @@ const LinearCC = ({input_index}) => {
     const handleChannelChange = (option) => {
         //console.log("handleChannelChange");
         try {
-            if (!advertisementPeriod.current) {
+            //if (!advertisementPeriod.current) {
                 let ch = channelID.current;
                 if (option === 'up') {
                     channelID.current = ch >= dt.vod[input_index].max_channels ? 1 : ch + 1;
@@ -987,9 +1067,14 @@ const LinearCC = ({input_index}) => {
                 }
                 setLeftUrl(dt.vod[input_index][`left_playback_url_${channelID.current}`]);
                 setRightUrl(dt.vod[input_index][`right_playback_url_${channelID.current}`]);
-                advertisementPeriod.current = true;
-                handleAdRequest();
-            }
+
+                if (isDisplaySelected) {
+                    handleLeftDisplayAdRequest();
+                    handleRightDisplayAdRequest();
+                }
+                //advertisementPeriod.current = true;
+                //handleAdRequest();
+            //}
             //handleReinitialize();
             //console.log("channelID.current: ", channelID.current);
         }
@@ -998,6 +1083,40 @@ const LinearCC = ({input_index}) => {
         }
     };
     
+
+    const handleLeftDisplayAdRequest = async () => {
+        try {
+            let url = buildURL(dt.vod[input_index].left_display_ads_url, 'l');
+            let vast = await getVast(url);
+
+            if (processDisplayVast(vast, 'l')){
+                setShowLeftDisplayImage(true);
+                setTimeout(() => setShowLeftDisplayImage(false), __SHRINK_ANNIMATION__);
+                getData(leftDisplayImpression.current);
+            }
+
+        }
+        catch (error) {
+            console.error('Error handling display ad request [l]:', error);
+        }            
+    };
+
+    const handleRightDisplayAdRequest = async () => {
+        try {
+            let url = buildURL(dt.vod[input_index].right_display_ads_url, 'r');
+            let vast = await getVast(url);
+
+            if (processDisplayVast(vast, 'r')){
+                setShowRightDisplayImage(true);
+                setTimeout(() => setShowRightDisplayImage(false), __SHRINK_ANNIMATION__);
+                getData(rightDisplayImpression.current);
+            }            
+        }
+        catch (error) {
+            console.error('Error handling display ad request [r]:', error);
+        }            
+    };
+
     return (
         <div
             className="relative min-h-screen bg-cover bg-center font-poppins"
@@ -1022,9 +1141,36 @@ const LinearCC = ({input_index}) => {
                         />
                         <div>
                             <AdEventPanel labels={leftTrackingLabels} />
-                        </div>                     
-                        <div> 
-                        <video ref={leftVideoRef} controls style={{ width: '750px' }} />
+                        </div>     
+                        <div className="w-[750px] h-[420px] flex items-center justify-start bg-black overflow-hidden">
+                            {/* Left video */}
+                            <div
+                                className="h-full flex items-center justify-center"
+                                style={{
+                                width: shrinkPlayersLeft ? '350px' : '750px',
+                                transition: 'width 0.5s ease-in-out'
+                                }}
+                            >
+                                <video
+                                    ref={leftVideoRef}
+                                    controls
+                                    className="h-full object-contain"
+                                    style={{ width: '100%' }}
+                                />
+                            </div>
+                            {/* Display Ad - only during shrink */}
+                            {shrinkPlayersLeft && showLeftDisplayImage && (
+                                <div
+                                    className="h-full flex items-center justify-center ml-2"
+                                    style={{ width: 'calc(750px - 350px - 8px)' }} // 8px = approx. Tailwind ml-2
+                                >
+                                <img
+                                    src={leftDisplayImage.current}
+                                    alt="Display Ad"
+                                    className="h-full object-contain"
+                                />
+                                </div>
+                            )}
                         </div>
                     </div>
                     <div>
@@ -1038,8 +1184,35 @@ const LinearCC = ({input_index}) => {
                         <div>
                             <AdEventPanel labels={rightTrackingLabels} />
                         </div>                    
-                        <div>
-                        <video ref={rightVideoRef} controls style={{ width: '750px' }} />
+                        <div className="w-[750px] h-[420px] flex items-center justify-start bg-black overflow-hidden">
+                            {/* Right video */}
+                            <div
+                                className="h-full flex items-center justify-center"
+                                style={{
+                                width: shrinkPlayersRight ? '350px' : '750px',
+                                transition: 'width 0.5s ease-in-out'
+                                }}
+                            >
+                                <video
+                                    ref={rightVideoRef}
+                                    controls
+                                    className="h-full object-contain"
+                                    style={{ width: '100%' }}
+                                />
+                            </div>
+                            {/* Display Ad - only during shrink */}
+                            {shrinkPlayersRight && showRightDisplayImage && (
+                                <div
+                                    className="h-full flex items-center justify-center ml-2"
+                                    style={{ width: 'calc(750px - 350px - 8px)' }} // 8px = approx. Tailwind ml-2
+                                >
+                                <img
+                                    src={rightDisplayImage.current}
+                                    alt="Display Ad"
+                                    className="h-full object-contain"
+                                />
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -1076,6 +1249,26 @@ const LinearCC = ({input_index}) => {
                     <button onClick={() => handleChannelChange('down')} disabled={advertisementPeriod.current} className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800 transition">
                         Ch. Down
                     </button>
+                    <br />
+                    <button
+                        onClick={() => {
+                            setIsDisplaySelected(true);
+                            toggleModeRef.current = "display";
+                        }}
+                        className={`px-4 py-2 rounded-full text-white ${isDisplaySelected ? 'bg-green-600' : 'bg-gray-400'}`}
+                    >
+                        Display
+                    </button>
+                    <button
+                        onClick={() => {
+                            setIsDisplaySelected(false);
+                            toggleModeRef.current = "video";
+                        }}
+                        className={`px-4 py-2 rounded-full text-white ${!isDisplaySelected ? 'bg-green-600' : 'bg-gray-400'}`}
+                    >
+                        Video
+                    </button>
+                 
                 </div>
             </div>
         </div>
