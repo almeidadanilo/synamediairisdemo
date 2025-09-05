@@ -2,6 +2,7 @@
     "vod": [
         {
             "demo_scene": "1",
+            "active": true,
             "type":"VOD",
             "postroll_offset": 675,
             "menu_title": "Std Pre/Post",
@@ -17,6 +18,7 @@
         },
         {
             "demo_scene": "2",
+            "active": true,
             "type":"VOD",
             "postroll_offset": 650,
             "menu_title": "Pre w/pod / Mid / Post",
@@ -32,6 +34,7 @@
         },
         {
             "demo_scene": "3",
+            "active": true,
             "type":"LINEAR",
             "menu_title": "Break w/flex pod",
             "great_title": "Spot Mid-roll, SCTE35 on demand",
@@ -46,6 +49,7 @@
         },
         {
             "demo_scene": "4",
+            "active": true,
             "type":"LINEAR",
             "menu_title": "Break w/fixed pod",
             "great_title": "Mixed Pod and Spot Mid-roll, SCTE35 on demand",
@@ -60,6 +64,7 @@
         },
         {
             "demo_scene": "5",
+            "active": true,
             "type":"VOD",
             "postroll_offset": 136,
             "menu_title": "Short Ads",
@@ -75,6 +80,7 @@
         },
         {
             "demo_scene": "6",
+            "active": true,
             "type":"LINEAR",
             "menu_title": "Region: SLO/CRO",
             "great_title": "Spot Mid-roll, SCTE35 on demand",
@@ -89,6 +95,7 @@
         },
         {
             "demo_scene": "7",
+            "active": true,
             "type":"VOD",
             "postroll_offset": 164,
             "menu_title": "Region: SLO/CRO",
@@ -104,9 +111,10 @@
         },
         {
             "demo_scene": "8",
+            "active": true,
             "type":"VOD",
             "postroll_offset": 180,
-            "menu_title": "Profile 1|2: it",
+            "menu_title": "Profile 1|2: ITA",
             "great_title": "Spot Pre/Post-roll",
             "left_title": "1x Pre/post-roll",
             "left_segment":"Profile: P1",
@@ -119,8 +127,9 @@
         },
         {
             "demo_scene": "9",
+            "active": true,
             "type":"LINEAR",
-            "menu_title": "Profile 1|2: kor (vDCM)",
+            "menu_title": "Profile 1|2: KOR (vDCM)",
             "great_title": "Spot Mid-roll, SCTE35 on demand",
             "left_title": "Mid-roll Spots",
             "left_segment":"Profile: P1",
@@ -133,8 +142,9 @@
         },
         {
             "demo_scene": "10",
+            "active": false,
             "type":"LINEAR",
-            "menu_title": "Profile 1|2: kor (Quortex CH2)",
+            "menu_title": "Profile 1|2: KOR (Quortex CH2)",
             "great_title": "Spot Mid-roll, SCTE35 on demand",
             "left_title": "Mid-roll Spots",
             "left_segment":"Profile: P1",
@@ -147,9 +157,10 @@
         },
         {
             "demo_scene": "11",
+            "active": true,
             "type":"VOD",
             "postroll_offset": 140,
-            "menu_title": "Profile 1|2: heb",
+            "menu_title": "Profile 1|2: HEB",
             "great_title": "Spot Pre/Post-roll",
             "left_title": "1x Pre/post-roll",
             "left_segment":"Profile: P1",
@@ -162,9 +173,10 @@
         },
         {
             "demo_scene": "12",
+            "active": true,
             "type":"SPECIALS",
-            "menu_title": "VOD AdPause [heb]",
-            "great_title": "AdPause - Brand Bundled - [heb]",
+            "menu_title": "VOD AdPause: Bundle",
+            "great_title": "AdPause - Brand Bundled - [HEB]",
             "left_title": "1x Pre/post-roll",
             "left_segment":"Profile: P3",
             "left_flag": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Flag_of_Israel.svg",
@@ -178,8 +190,9 @@
         },
         {
             "demo_scene": "13",
+            "active": false,
             "type":"SPECIALS",
-            "menu_title": "VOD Ad Video + Overlay [heb]",
+            "menu_title": "VOD Ad Video + Overlay [HEB]",
             "great_title": "Ad Video + Overlay",
             "left_title": "1x Pre/post-roll",
             "left_segment":"Profile: P3",
@@ -192,8 +205,9 @@
         },
         {
             "demo_scene": "14",
+            "active": true,
             "type":"LINEAR",
-            "menu_title": "Profile 1|2: heb (Keshet)",
+            "menu_title": "Profile 1|2: HEB (Keshet)",
             "great_title": "Spot Mid-roll, SCTE35 on demand",
             "left_title": "Mid-roll Spots",
             "left_segment":"Profile: P1",
@@ -206,9 +220,10 @@
         },
         {
             "demo_scene": "15",
+            "active": false,
             "type":"SPECIALS",
-            "menu_title": "VOD Ad Video + Video Ad on Pause [heb]",
-            "great_title": "Ad Video + Video Ad on Pause [heb]",
+            "menu_title": "VOD Ad Video + Video Ad on Pause [HEB]",
+            "great_title": "Ad Video + Video Ad on Pause [HEB]",
             "left_title": "1x Pre/post-roll",
             "left_segment":"Profile: P3",
             "left_flag": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Flag_of_Israel.svg",
@@ -222,6 +237,7 @@
         },
         {
             "demo_scene": "16",
+            "active": true,
             "type":"LINEARCC",
             "menu_title": "Linear Ch. Change + POI",
             "great_title": "Linear Channel Change and Point of Interest",
@@ -234,15 +250,16 @@
             "max_channels": "2",
             "left_playback_url_1": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/skiing/Syna_Skiing.mpd?channelId=204&PAID=ads1&daiEnabled=true&kvp=language~heb&kvp=profile~p1",
             "left_playback_url_2": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/redbull/Syna_RedBull.mpd?channelId=204&PAID=ads1&daiEnabled=true&kvp=language~heb&kvp=profile~p1",
-            "left_display_ads_url": "https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?position=pre&kvp=adForm~display&kvp=profile~p3&kvp=country~UEA&kvp=sequence~seq3",
+            "left_display_ads_url": "https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?position=pre&kvp=adForm~display&kvp=profile~p1",
             "left_video_ads_url": "",
             "right_playback_url_1": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/skiing/Syna_Skiing.mpd?channelId=204&PAID=ads1&daiEnabled=true&kvp=language~heb&kvp=profile~p1",
             "right_playback_url_2": "https://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/easdemo.godev.coldsnow.net/iris/blackout/redbull/Syna_RedBull.mpd?channelId=204&PAID=ads1&daiEnabled=true&kvp=language~heb&kvp=profile~p1",
-            "right_display_ads_url": "https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?position=pre&kvp=adForm~display&kvp=profile~p3&kvp=country~UEA&kvp=sequence~seq1",
+            "right_display_ads_url": "https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?position=pre&kvp=adForm~display&kvp=profile~p2",
             "right_video_ads_url": ""
         },
         {
             "demo_scene": "17",
+            "active": true,
             "type":"VOD",
             "postroll_offset": 185,
             "menu_title": "Profile 1|2: UAE",
@@ -265,6 +282,7 @@
         },
         {
             "demo_scene": "18",
+            "active": true,
             "type":"LINEAR",
             "postroll_offset": 0,
             "menu_title": "Profile 1|2: UAE (Fujairah TV)",
@@ -287,6 +305,7 @@
         },
         {
             "demo_scene": "19",
+            "active": true,
             "type":"LINEAR",
             "postroll_offset": 0,
             "menu_title": "Profile 1|2: ITA",
@@ -309,6 +328,7 @@
         },
         {
             "demo_scene": "20",
+            "active": true,
             "type":"VOD",
             "postroll_offset": 3977,
             "menu_title": "Profile 1|2: BRA",
@@ -334,6 +354,7 @@
         },
         {
             "demo_scene": "21",
+            "active": false,
             "type":"LINEAR",
             "postroll_offset": 0,
             "menu_title": "Profile 1|2: ZAF",
@@ -356,6 +377,7 @@
         },
         {
             "demo_scene": "22",
+            "active": true,
             "type":"LINEAR",
             "postroll_offset": 0,
             "menu_title": "Profile 1|2: BRA",
@@ -381,6 +403,7 @@
         },
         {
             "demo_scene": "23",
+            "active": false,
             "type":"SPECIALS",
             "postroll_offset": 0,
             "menu_title": "VOD AdPause [UAE]",
@@ -406,9 +429,10 @@
         },
         {
             "demo_scene": "24",
+            "active": true,
             "type":"SPECIALS",
             "postroll_offset": 0,
-            "menu_title": "VOD Ad Video + Overlay [UAE]",
+            "menu_title": "VOD Ad Video + Overlay Bundle",
             "great_title": "Ad Video + Overlay - Bundled - UAE",
             "left_title": "1x Pre/post-roll",
             "left_segment":"Profile: P3",
@@ -431,6 +455,7 @@
         },
         {
             "demo_scene": "25",
+            "active": false,
             "type":"SPECIALS",
             "menu_title": "VOD Ad Video + Video Ad on Pause [UAE]",
             "great_title": "Ad Video + Video Ad on Pause [UAE]",

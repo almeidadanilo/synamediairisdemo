@@ -100,6 +100,8 @@ const Linear = ({input_index}) => {
     const rightCurrentStream = useRef("");  
     const leftStreamIsAdRef = useRef(false);
     const rightStreamIsAdRef = useRef(false);
+    const leftDID = useRef("");
+    const rightDID = useRef("");    
     const [leftStreamIsAd, setleftStreamIsAd] = useState(false);  
     const [rightStreamIsAd, setrightStreamIsAd] = useState(false);
     const [leftTrackingEvents, setLeftTrackingEvents] = useState([]);
@@ -489,13 +491,10 @@ const Linear = ({input_index}) => {
 
         // Get the EventStream for click-through
         if (!eventStreamCt) { return; }
-        //console.log("eventStreamCt", eventStreamCt);
         for (let u = 0; u < eventStreamCt.Event_asArray.length; u++) {
             myURL = eventStreamCt.Event_asArray[u].VideoClicks_asArray[0].ClickTracking_asArray[0];
-            //console.log("myURL: ", myURL);
             ctURL = eventStreamCt.Event_asArray[u].VideoClicks_asArray[0].ClickThrough_asArray[0];
             te = {stream:ind, id:ind, pt: 0, type: 'clicktrough', url: myURL, reported: false, advert: adv, ct: ctURL};
-            //console.log(te);
             tevs.push(te);
         }        
     }
@@ -546,10 +545,21 @@ const Linear = ({input_index}) => {
 
     const buildURL = (url, pl) => {
         let str = '';
-        //let did = crypto.randomUUID();
-        //let did = window.crypto?.randomUUID?.() || Math.random().toString(36).substring(2);
-        let did = generateUUID();
-        //console.log("did=", did);
+        let did= '';
+
+        if (pl === 'l'){
+            if (leftDID.current === ''){
+                leftDID.current = generateUUID();
+            }
+            did = leftDID.current;
+        }
+        else {
+            if (rightDID.current === ''){
+                rightDID.current = generateUUID();
+            }
+            did = rightDID.current;
+        }
+        
         if (url !== '') {
             if (url.includes('?')){
                 str = url + '&sessionId=SYNAIRISDEMO_' + pl + '_' + input_index.toString() + '_' + (Math.floor(new Date().getTime() / 1000).toString());

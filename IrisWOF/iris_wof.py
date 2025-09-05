@@ -7,6 +7,7 @@ import os
 import pygame
 import pyautogui
 import tkinter as tk
+import paho.mqtt.client as mqtt
 from tkinter import ttk
 from PIL import Image, ImageTk
 
@@ -40,7 +41,7 @@ except:
     root.iconphoto(True, icon_img)
 ###
 root.title("The Wonderful Iris BLUEBUTTON Experience")
-root.geometry("550x700")
+root.geometry("650x700")
 root.resizable(False, False)
 
 # create the tabs
@@ -49,13 +50,13 @@ notebook.pack(fill="both", expand=True)
 # Create frames for each tab
 tab_wheel = tk.Frame(notebook)
 tab_manual = tk.Frame(notebook)
+tab_mqtt = tk.Frame(notebook)
 notebook.add(tab_wheel, text="Wheel of Fortune")
 notebook.add(tab_manual, text="Manual Select")
+notebook.add(tab_mqtt, text="MQTT Signal")
 
 #
 is_spinning = False
-# Bind the 'i' key to trigger spin_wheel
-root.bind('i', lambda event: spin_wheel())
 
 # Frame for ComboBox + Toggle Button (side by side)
 top_controls_frame = tk.Frame(tab_wheel)
@@ -124,6 +125,172 @@ for label_text, name in fields:
 result_label_manual = tk.Label(tab_manual, text="Press SEND!", font=("Helvetica", 18))
 result_label_manual.pack(pady=10)
 
+# Globals for MQ-TT
+mqtt_client = None
+mqtt_connected = False
+
+######################################################################################################
+# Connectto MQ-TT
+######################################################################################################
+def mqtt_connect():
+    try:
+        client = ensure_mqtt_client()
+        host = mqtt_host_var.get().strip()
+        port = int(mqtt_port_var.get())
+        keepalive = 60
+        # Optional: TLS if you want to use wss with public brokers that require TLS certs.
+        # For test.mosquitto.org: websockets on 8081 is usually without TLS in many setups.
+        mqtt_log(f"[MQTT] Connecting to {host}:{port} ({mqtt_transport_var.get()}) ...")
+        client.connect(host, port, keepalive)
+        client.loop_start()
+    except Exception as e:
+        mqtt_log(f"[MQTT] Connect error: {e}")
+
+######################################################################################################
+# Disconnect from MQTT
+######################################################################################################
+def mqtt_disconnect():
+    global mqtt_client
+    try:
+        if mqtt_client:
+            mqtt_log("[MQTT] Disconnecting ...")
+            mqtt_client.loop_stop()
+            mqtt_client.disconnect()
+            mqtt_client = None
+    except Exception as e:
+        mqtt_log(f"[MQTT] Disconnect error: {e}")
+
+# ============================
+# MQTT Tab UI
+# ============================
+# Defaults
+mqtt_host_var = tk.StringVar(value="test.mosquitto.org")
+mqtt_port_var = tk.StringVar(value="1883")                  # 1883 (TCP) or 8081 (websockets)
+mqtt_transport_var = tk.StringVar(value="tcp")              # "tcp" or "websockets"
+mqtt_topic_var = tk.StringVar(value="linearcc/triggerDAI")  # same topic your React app listens to
+mqtt_status_var = tk.StringVar(value="Disconnected")
+
+# Container for the connection controls
+row_conn = tk.Frame(tab_mqtt)
+row_conn.pack(fill="x", pady=8, padx=16)
+
+# Let the Host entry expand, and keep a trailing stretch column for right-aligning the status
+row_conn.grid_columnconfigure(1, weight=1)   # Host entry grows
+row_conn.grid_columnconfigure(5, weight=1)   # trailing spacer
+
+# ---------------- Row 1: Host + Port ----------------
+tk.Label(row_conn, text="Host:", width=8, anchor="w").grid(row=0, column=0, padx=(0,6), pady=2, sticky="w")
+tk.Entry(row_conn, textvariable=mqtt_host_var).grid(row=0, column=1, padx=(0,12), pady=2, sticky="we")
+
+tk.Label(row_conn, text="Port:", width=6, anchor="w").grid(row=0, column=2, padx=(0,6), pady=2, sticky="w")
+tk.Entry(row_conn, textvariable=mqtt_port_var, width=8).grid(row=0, column=3, padx=(0,0), pady=2, sticky="w")
+
+# ---------------- Row 2: Transport ----------------
+tk.Label(row_conn, text="Transport:", width=10, anchor="w").grid(row=1, column=0, padx=(0,6), pady=2, sticky="w")
+ttk.Combobox(row_conn, textvariable=mqtt_transport_var,values=["tcp", "websockets"], width=12, state="readonly").grid(row=1, column=1, padx=(0,12), pady=2, sticky="w")
+
+# ---------------- Row 3: Buttons + Status ----------------
+tk.Button(row_conn, text="Connect", command=mqtt_connect, width=10).grid(row=2, column=0, padx=(0,6), pady=(6,0), sticky="w")
+tk.Button(row_conn, text="Disconnect", command=mqtt_disconnect, width=12).grid(row=2, column=1, padx=(0,12), pady=(6,0), sticky="w")
+
+tk.Label(row_conn, textvariable=mqtt_status_var, fg="green", width=12, anchor="e").grid(row=2, column=5, padx=0, pady=(6,0), sticky="e")
+
+# Topic row
+row_topic = tk.Frame(tab_mqtt)
+row_topic.pack(fill="x", pady=4, padx=16)
+tk.Label(row_topic, text="Topic:", width=8, anchor="w").pack(side="left")
+tk.Entry(row_topic, textvariable=mqtt_topic_var, width=40).pack(side="left")
+
+# Separator
+ttk.Separator(tab_mqtt, orient="horizontal").pack(fill="x", pady=8, padx=16)
+
+# Quick Actions
+actions_frame = tk.LabelFrame(tab_mqtt, text="Advertisement!")
+actions_frame.pack(fill="x", pady=4, padx=16)
+
+# Trigger DAI
+row_cc = tk.Frame(actions_frame)
+row_cc.pack(fill="x", pady=6)
+
+tk.Label(row_cc, text="DAI:", width=6, anchor="w").pack(side="left")
+cc_side_var = tk.StringVar(value="1")  # "left" | "right" | "both"
+ttk.Combobox(row_cc, textvariable=cc_side_var, values=["1","2"], width=8, state="readonly").pack(side="left", padx=(0,10))
+
+def do_DAI():
+    payload = {
+        "type": cc_side_var.get()
+    }
+    mqtt_publish(mqtt_topic_var.get().strip(), payload)
+
+tk.Button(row_cc, text="Trigger DAI", command=do_DAI).pack(side="left")
+
+# Separator
+ttk.Separator(tab_mqtt, orient="horizontal").pack(fill="x", pady=8, padx=16)
+
+# Log Console
+log_frame = tk.LabelFrame(tab_mqtt, text="MQTT Log")
+log_frame.pack(fill="both", expand=True, padx=16, pady=8)
+
+mqtt_log_text = tk.Text(log_frame, height=12, state="disabled", wrap="word")
+mqtt_log_text.pack(fill="both", expand=True, padx=6, pady=6)
+
+######################################################################################################
+# MQ-TT Logging
+######################################################################################################
+def mqtt_log(msg):
+    try:
+        mqtt_log_text.configure(state="normal")
+        mqtt_log_text.insert("end", f"{msg}\n")
+        mqtt_log_text.see("end")
+        mqtt_log_text.configure(state="disabled")
+    except Exception:
+        pass
+
+######################################################################################################
+# On connect
+######################################################################################################
+def on_mqtt_connect(client, userdata, flags, rc, properties=None):
+    global mqtt_connected
+    mqtt_connected = (rc == 0)
+    mqtt_log(f"[MQTT] Connected (rc={rc})" if mqtt_connected else f"[MQTT] Failed to connect (rc={rc})")
+    if mqtt_connected:
+        mqtt_status_var.set("Connected")
+    else:
+        mqtt_status_var.set("Disconnected")
+
+######################################################################################################
+# On disconnect
+######################################################################################################
+def on_mqtt_disconnect(client, userdata, rc, properties=None):
+    global mqtt_connected
+    mqtt_connected = False
+    mqtt_status_var.set("Disconnected")
+    mqtt_log(f"[MQTT] Disconnected (rc={rc})")
+
+######################################################################################################
+# Ensure
+######################################################################################################
+def ensure_mqtt_client():
+    global mqtt_client
+    if mqtt_client is None:
+        mqtt_client = mqtt.Client(transport=("websockets" if mqtt_transport_var.get() == "websockets" else "tcp"))
+        mqtt_client.on_connect = on_mqtt_connect
+        mqtt_client.on_disconnect = on_mqtt_disconnect
+    return mqtt_client
+
+######################################################################################################
+# Publishing on MQ Topic
+######################################################################################################
+def mqtt_publish(topic, payload_dict):
+    if not mqtt_connected:
+        mqtt_log("[MQTT] Not connected. Please connect first.")
+        return
+    try:
+        j = json.dumps(payload_dict)
+        mqtt_log(f"[PUB] {topic} :: {j}")
+        mqtt_client.publish(topic, j, qos=0, retain=False)
+    except Exception as e:
+        mqtt_log(f"[MQTT] Publish error: {e}")
 
 ######################################################################################################
 # Manual Tab quickset
@@ -310,7 +477,7 @@ def capture_special_photo():
 
     # 0 - built in
     # 1 - USB
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("Cannot open webcam")
         return
@@ -533,6 +700,32 @@ def send_ESAM(res, opt):
     ESAM = requests.post(url, data=xml, headers=headers)
     print('Status Code:', ESAM.status_code)
 
+######################################################################################################
+# Dispatch 'i' depending on the selected tab.
+######################################################################################################
+def handle_key_i(event=None):
+    # don't trigger while the user is typing in Entry/Text fields
+    f = root.focus_get()
+    try:
+        if f and f.winfo_class() in ("Entry", "TEntry", "Text"):
+            return
+    except Exception:
+        pass
+    
+    idx = notebook.index(notebook.select())
+    # 0: Wheel, 1: Manual, 2: MQTT
+    if idx == 0:
+        spin_wheel()
+    elif idx == 1:
+        send_scte()
+    elif idx == 2:
+        do_DAI()
+
+######################################################################################################
+# Bind the 'i' key to trigger spin_wheel
+######################################################################################################
+#root.bind('i', lambda event: spin_wheel())
+root.bind('<KeyPress-i>', handle_key_i)
 
 ######################################################################################################
 # Main Loop
@@ -553,5 +746,14 @@ btQuickset = tk.Button(tab_manual, text="..", command=quickset, font=("Helvetica
 btQuickset.pack(side="left", padx=15)
 
 combo_box.bind("<<ComboboxSelected>>", update_wheel_image)
+
+def on_app_close():
+    try:
+        mqtt_disconnect()
+    except:
+        pass
+    root.destroy()
+
+root.protocol("WM_DELETE_WINDOW", on_app_close)
 
 root.mainloop()

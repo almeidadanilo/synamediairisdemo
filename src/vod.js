@@ -99,6 +99,8 @@ const Vod = ({input_index}) => {
     const rightCurrentStream = useRef("");  
     const leftStreamIsAdRef = useRef(false);
     const rightStreamIsAdRef = useRef(false);
+    const leftDID = useRef("");
+    const rightDID = useRef("");
     const [leftStreamIsAd, setleftStreamIsAd] = useState(false);  
     const [rightStreamIsAd, setrightStreamIsAd] = useState(false);
     const [leftTrackingEvents, setLeftTrackingEvents] = useState([]);
@@ -523,9 +525,22 @@ const Vod = ({input_index}) => {
         let str = '';
         //let did = crypto.randomUUID();
         //let did = window.crypto?.randomUUID?.() || Math.random().toString(36).substring(2);
-        let did = generateUUID();
+        //let did = generateUUID();
+        let did= '';
 
-        //console.log("did=", did);
+        if (pl === 'l'){
+            if (leftDID.current === ''){
+                leftDID.current = generateUUID();
+            }
+            did = leftDID.current;
+        }
+        else {
+            if (rightDID.current === ''){
+                rightDID.current = generateUUID();
+            }
+            did = rightDID.current;
+        }
+        
         str = url + '&sessionId=SYNAIRISDEMO_' + pl + '_' + input_index.toString() + '_' + (Math.floor(new Date().getTime() / 1000).toString());
         str = str + '&deviceId=' + did
         

@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import dashjs from 'dashjs';
 import axios from 'axios';
 import dt from './data.json';
+import mqtt from 'mqtt';
+
 
 const CheckIcon = () => (
   <svg viewBox="0 0 24 24" className="w-6 h-6">
@@ -114,6 +116,8 @@ const LinearCC = ({input_index}) => {
     const rightDisplayImpression = useRef("");
     const leftStreamIsAdRef = useRef(false);
     const rightStreamIsAdRef = useRef(false);
+    const leftDisplayAdURL = useRef("");
+    const rightDisplayAdURL = useRef("");
     const [showLeftDisplayImage, setShowLeftDisplayImage] = useState(false);
     const [showRightDisplayImage, setShowRightDisplayImage] = useState(false);
     const [leftStreamIsAd, setleftStreamIsAd] = useState(false);  
@@ -155,13 +159,13 @@ const LinearCC = ({input_index}) => {
 
     useEffect(() => {
         // Start left timer
-        intervalLeftRef.current = setInterval(updateCurrentTimeLeft, 1000);
+        intervalLeftRef.current = setInterval(updateCurrentTimeLeft, _INTERVAL_);
         
         // Start right timer
-        intervalRightRef.current = setInterval(updateCurrentTimeRight, 1000);
+        intervalRightRef.current = setInterval(updateCurrentTimeRight, _INTERVAL_);
       
         return () => {
-            console.log('[Linear] Component unmounting — tearing down players');
+            console.log('[Linear_cc] Component unmounting — tearing down players');
             // Cleanup on unmount or page change
             if (intervalLeftRef.current) {
                 clearInterval(intervalLeftRef.current);
@@ -230,7 +234,47 @@ const LinearCC = ({input_index}) => {
           setRightCurrentAdvert('');
         }
     }, [rightTrackingEvents, rightStreamIsAd, rightCurrentStream.current]);
-      
+
+
+    // UseEffect to control the MQ-TT topic signaling
+    useEffect(() => {
+        const client = mqtt.connect('wss://test.mosquitto.org:8081/mqtt');
+
+        client.on('connect', () => {
+            console.log('[MQTT] Connected');
+            client.subscribe('linearcc/triggerDAI', (err) => {
+                if (err) {
+                    console.error('[MQTT] Subscription error:', err);
+                }
+            });
+        });
+
+        client.on('message', (topic, message) => {
+            const payload = message.toString();
+            console.log(`[MQTT] ${topic}: ${payload}`);
+
+            if (topic === 'linearcc/triggerDAI') {
+                let tp = JSON.parse(payload);
+                if (tp['type'] === '1') {
+                    handleLeftDisplayAdRequest();
+                    handleRightDisplayAdRequest();
+                }
+                else if (tp['type'] === '2') {
+                    let lURL = leftDisplayAdURL.current.replaceAll('p1', 'p3');
+                    let rURL = rightDisplayAdURL.current.replaceAll('p2', 'p4');
+                    handleLeftDisplayAdRequest(lURL);
+                    handleRightDisplayAdRequest(rURL);
+                }
+            }
+        });
+
+        return () => {
+            // Clean disconnect
+            client.end(true); 
+            console.log('[MQTT] Disconnected');
+        };
+    }, []);
+
     const updateCurrentTimeLeft = () => {
         
         let pl = leftPlayer.current;
@@ -1083,32 +1127,46 @@ const LinearCC = ({input_index}) => {
         }
     };
     
-
-    const handleLeftDisplayAdRequest = async () => {
+    const handleLeftDisplayAdRequest = async (overwriteURL='') => {
         try {
-            let url = buildURL(dt.vod[input_index].left_display_ads_url, 'l');
+            if (leftDisplayAdURL.current === ''){
+                leftDisplayAdURL.current = buildURL(dt.vod[input_index].left_display_ads_url, 'l');
+            }
+            let url = overwriteURL === '' ? leftDisplayAdURL.current : overwriteURL;
+            //let url = buildURL(dt.vod[input_index].left_display_ads_url, 'l');
             let vast = await getVast(url);
 
             if (processDisplayVast(vast, 'l')){
                 setShowLeftDisplayImage(true);
-                setTimeout(() => setShowLeftDisplayImage(false), __SHRINK_ANNIMATION__);
+                setShrinkPlayersLeft(true);
+                setTimeout(() => {
+                    setShowLeftDisplayImage(false);
+                    setShrinkPlayersLeft(false);
+                }, __SHRINK_ANNIMATION__);
                 getData(leftDisplayImpression.current);
             }
-
         }
         catch (error) {
             console.error('Error handling display ad request [l]:', error);
         }            
     };
 
-    const handleRightDisplayAdRequest = async () => {
+    const handleRightDisplayAdRequest = async (overwriteURL='') => {
         try {
-            let url = buildURL(dt.vod[input_index].right_display_ads_url, 'r');
+            if (rightDisplayAdURL.current === ''){
+                rightDisplayAdURL.current = buildURL(dt.vod[input_index].right_display_ads_url, 'r');
+            }
+            //let url = buildURL(dt.vod[input_index].right_display_ads_url, 'r');
+            let url = overwriteURL === '' ? rightDisplayAdURL.current : overwriteURL;
             let vast = await getVast(url);
 
             if (processDisplayVast(vast, 'r')){
                 setShowRightDisplayImage(true);
-                setTimeout(() => setShowRightDisplayImage(false), __SHRINK_ANNIMATION__);
+                setShrinkPlayersRight(true);
+                setTimeout(() => {
+                    setShowRightDisplayImage(false);
+                    setShrinkPlayersRight(false);
+                }, __SHRINK_ANNIMATION__);
                 getData(rightDisplayImpression.current);
             }            
         }
