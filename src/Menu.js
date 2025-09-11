@@ -167,6 +167,17 @@ function Menu() {
             )}
           </li>
         )}
+        <li>
+          <a 
+            href="https://d16s6yuyoczwni.cloudfront.net/nab-concept-operation-console/latest/index.html#/iris_analytics" 
+            className={topBtn} 
+            onClick={closeAll} 
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            AI
+          </a>
+        </li>
       </ul>
     </nav>
   );

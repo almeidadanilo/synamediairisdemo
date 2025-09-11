@@ -81,6 +81,7 @@ const AdEventPanel = ({ labels }) => {
 // Linear - component for linear content with SCTE35 on demand Demo Use Cases
 
 const Linear = ({input_index}) => {
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
     const [, forceUpdate] = useState(0);
     const leftVideoRef = useRef(null);
     const rightVideoRef = useRef(null);
@@ -94,8 +95,8 @@ const Linear = ({input_index}) => {
     //const rightPrevPeriodWasAd = useRef(false);
     const [leftUrl, setLeftUrl] = useState((dt.vod[input_index].left_playback_url));
     const [rightUrl, setRightUrl] = useState((dt.vod[input_index].right_playback_url));
-    const [leftVolumeLabel, setLeftVolumeLabel] = useState("5%");
-    const [rightVolumeLabel, setRightVolumeLabel] = useState("5%");
+    const [leftVolumeLabel, setLeftVolumeLabel] = useState((dt.vod[input_index].volume));
+    const [rightVolumeLabel, setRightVolumeLabel] = useState((dt.vod[input_index].volume));
     const leftCurrentStream = useRef("");
     const rightCurrentStream = useRef("");  
     const leftStreamIsAdRef = useRef(false);
@@ -900,26 +901,28 @@ const Linear = ({input_index}) => {
 
     const handleToggleLeftVolume = () => {
         if (leftVideoRef.current) {
-            if (leftVolumeLabel === "5%") {
-                leftVideoRef.current.volume = 0.05;
+            if (leftVolumeLabel === (dt.vod[input_index].volume)) {
+                let v = Number(leftVolumeLabel.replace(/[^\d.,-]+/g, '').replace(',', '.')) / 100;
+                leftVideoRef.current.volume = v;
                 leftVideoRef.current.muted = false;
                 setLeftVolumeLabel("0%");
             } else {
                 leftVideoRef.current.volume = 0;
-                setLeftVolumeLabel("5%");
+                setLeftVolumeLabel((dt.vod[input_index].volume));
             }
         }
     };
 
     const handleToggleRightVolume = () => {
         if (rightVideoRef.current) {
-            if (rightVolumeLabel === "5%") {
-                rightVideoRef.current.volume = 0.05;
+            if (rightVolumeLabel === (dt.vod[input_index].volume)) {
+                let v = Number(rightVolumeLabel.replace(/[^\d.,-]+/g, '').replace(',', '.')) / 100;
+                rightVideoRef.current.volume = v;
                 rightVideoRef.current.muted = false;
                 setRightVolumeLabel("0%");
             } else {
                 rightVideoRef.current.volume = 0;
-                setRightVolumeLabel("5%");
+                setRightVolumeLabel((dt.vod[input_index].volume));
             }
         }
     };

@@ -36,7 +36,7 @@ const LandingPage = () => {
             display: 'block',
             margin: '30px auto 0 auto',
             maxWidth: '60%',
-            filter: 'brightness(1.1) contrast(0.9)'
+            filter: 'brightness(1.0) contrast(1.0)'
           }}
         />
       )}

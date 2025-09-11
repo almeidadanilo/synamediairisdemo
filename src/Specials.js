@@ -80,7 +80,7 @@ const AdEventPanel = ({ labels }) => {
 
 // Specials - Component for VOD ad on pause and ad overlay Demo Use Cases
 
-const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVideo}) => {
+const Specials = ({input_index, inSequence, inAdOverlay}) => {
     const [, forceUpdate] = useState(0);
     const leftVideoRef = useRef(null);
     const intervalLeftRef = useRef(null);
@@ -115,11 +115,14 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
     const sequence = useRef("");
     const displayAdURL = useRef("");
     const [isStartSelected, setIsStartSelected] = useState(true);
+    const [isAdFormDisplaySelected, setAdFormDisplay] = useState(true);
+    const isAdFormDisplaySelectedRef = useRef(isAdFormDisplaySelected);
     const toggleModeRef = useRef("start");
+    const toggleAdFormModeRef = useRef("display");
     const zoomTimerRef = useRef(null);
     const prevZoomRef = useRef(null);
     const prevScrollRef = useRef(0);
-    const usingTransformRef = useRef(false);    
+    const usingTransformRef = useRef(false);
     const [leftOverlayImg, setLeftOverlayImg] = useState('');
     const [leftCurrentAdvert, setLeftCurrentAdvert] = useState('');
     const [leftTrackingLabels, setLeftTrackingLabels] = useState({
@@ -136,7 +139,9 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
     useEffect(() => {
         // Start left timer
         intervalLeftRef.current = setInterval(updateCurrentTimeLeft, 1000);
-      
+        
+        //setAdFormDisplay(true);
+
         return () => {
             console.log('[Special] Component unmounting — tearing down players');
             // Cleanup on unmount or page change
@@ -171,6 +176,10 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
     useEffect(() => {
         leftStreamIsAdRef.current = leftStreamIsAd;
     }, [leftStreamIsAd])
+
+    useEffect(() => {
+    isAdFormDisplaySelectedRef.current = isAdFormDisplaySelected;
+    }, [isAdFormDisplaySelected]);
 
     useEffect(() => {
         if (leftStreamIsAdRef.current && leftCurrentStream.current && leftTrackingEventsRef.current.length > 0) {
@@ -239,7 +248,7 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
         //console.log('setIntervalLeft() ' + intervalLeftRef.current);
 
         // Bind the adPause and Sequence
-        hasAdOnPause.current = inAdPause;
+        hasAdOnPause.current = isAdFormDisplaySelected;
         sequence.current = inSequence;
         ///////////////////////////////////////////////////////////////////////////
 
@@ -338,7 +347,7 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                 }
             } catch {}
         };
-    }, [input_index, inAdPause, inSequence]);
+    }, [input_index, inSequence]);
   
     // Handling the end of the secondary video playback
     const handleAdVideoEnd = () => {
@@ -498,14 +507,19 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                     switch (ev) {
                         case "start":
                             pts_ = 0;
+                            break;
                         case "firstQuartile":
                             pts_ = timeStringToMilliseconds(durationText) * 0.25;
+                            break;
                         case "midpoint":
                             pts_ = timeStringToMilliseconds(durationText) * 0.50;
+                            break;
                         case "thirdQuartile":
                             pts_ = timeStringToMilliseconds(durationText) * 0.75;
+                            break;
                         case "complete":
                             pts_ = timeStringToMilliseconds(durationText);
+                            break;
                     }
                     e = {event: ev, pts: pts_, url: trackers[i].textContent.trim(), reported: false}
                     elements.push(e);
@@ -537,14 +551,16 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
             let timestamp = Date.now();
             let displayAdDecision = ''    
             // If the use case is display ads on pause or display overlays
-            if (inAdOverlay || inAdPause) {
-                if (!inAdOverlay && inAdPause) {
+            //forceUpdate(n => n + 1);
+            //console.log(`inAdOverlay: ${inAdOverlay}, isAdFormDisplaySelected ${isAdFormDisplaySelectedRef.current}`)
+            if (inAdOverlay || isAdFormDisplaySelectedRef.current) {
+                if (!inAdOverlay && isAdFormDisplaySelectedRef.current) {
                     setShowBlackCover(true);
                 }
                 clearInterval(intervalLeftRef.current);
                 intervalLeftRef.current = null;
                 // ###################################################
-                if (hasAdOnPause.current) {
+                if (isAdFormDisplaySelectedRef.current) {
                     displayAdDecision = `https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?transactionId=${timestamp}&deviceId=${did}&sessionId=${timestamp}${dt.vod[input_index].left_display_ad_querystring}`;
                     if (inSequence != '') {
                         handleDisplayAds(displayAdDecision, true);
@@ -556,8 +572,8 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                 }
             }
             // If the use case is playing a video during the pause 
-            else if (inAdPauseVideo && toggleModeRef.current === 'start') {
-                displayAdDecision = `https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?transactionId=${timestamp}&deviceId=${did}&sessionId=${timestamp}${dt.vod[input_index].left_display_ad_querystring}`;
+            else if (!isAdFormDisplaySelectedRef.current && toggleModeRef.current === 'start') {
+                displayAdDecision = `https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?transactionId=${timestamp}&deviceId=${did}&sessionId=${timestamp}${dt.vod[input_index].left_display_ad_querystring_1}`;
                 handleVideoAds(displayAdDecision, 'onPause');
             }
 
@@ -573,8 +589,8 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
             setShowBlackCover(false);
 
             // If the use case is playing a video during the resume of a pause 
-            if (inAdPauseVideo && toggleModeRef.current === 'resume') {
-                displayAdDecision = `https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?transactionId=${timestamp}&deviceId=${did}&sessionId=${timestamp}${dt.vod[input_index].left_display_ad_querystring_1}`;
+            if (!isAdFormDisplaySelectedRef.current && toggleModeRef.current === 'resume') {
+                displayAdDecision = `https://ott-decision-apb.ads.iris.synamedia.com/adServer/op7z4geq/vast/vod?transactionId=${timestamp}&deviceId=${did}&sessionId=${timestamp}${dt.vod[input_index].left_display_ad_querystring_2}`;
                 handleVideoAds(displayAdDecision, 'onResume');
             }
             else {
@@ -834,7 +850,7 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                 clearInterval(intervalLeftRef.current);
                 intervalLeftRef.current = null;
             }
-            if (inAdPauseVideo) {
+            if (!isAdFormDisplaySelected) {
                 console.log("leftVideoRef.current.currentTime: ", leftVideoRef.current.currentTime);
                 //resumeTime.current = leftVideoRef.current.currentTime;
                 //console.log("resumeTime.current: ", resumeTime.current);
@@ -1051,6 +1067,22 @@ const Specials = ({input_index, inAdPause, inSequence, inAdOverlay, inAdPauseVid
                         <div>
                             <AdEventPanel labels={leftTrackingLabels} />
                             <div className="flex items-center space-x-4 mt-4">
+                                <button onClick={() => {
+                                        setAdFormDisplay(true);
+                                        //toggleAdFormModeRef.current = "display";
+                                    }}
+                                    className={`px-4 py-2 rounded-full text-white ${isAdFormDisplaySelected ? 'bg-green-600' : 'bg-gray-400'}`}
+                                >
+                                    Display
+                                </button>
+                                <button onClick={() => {
+                                        setAdFormDisplay(false);
+                                        //toggleAdFormModeRef.current = "video";
+                                    }}
+                                    className={`px-4 py-2 rounded-full text-white ${!isAdFormDisplaySelected ? 'bg-green-600' : 'bg-gray-400'}`}
+                                >
+                                    Video
+                                </button>                                
                                 <button
                                     onClick={() => {
                                         setIsStartSelected(true);

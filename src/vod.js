@@ -81,6 +81,8 @@ const AdEventPanel = ({ labels }) => {
 // Vod - Component for Video on Demand pre/mid/post roll Demo Use Cases
 
 const Vod = ({input_index}) => {
+    const _INTERVAL_ = 1000;
+    ///////////////////////////////////////////////////////////////////////////////////////////
     const [, forceUpdate] = useState(0);
     const leftVideoRef = useRef(null);
     const rightVideoRef = useRef(null);
@@ -88,19 +90,19 @@ const Vod = ({input_index}) => {
     const intervalRightRef = useRef(null);
     const leftPlayer = useRef(null);
     const rightPlayer = useRef(null);
-    //const playersInitialized = useRef(false);
     const leftCTEnabledRef = useRef(false);
     const rightCTEnabledRef = useRef(false);
     const [leftUrl, setLeftUrl] = useState((dt.vod[input_index].left_playback_url));
     const [rightUrl, setRightUrl] = useState((dt.vod[input_index].right_playback_url));
-    const [leftVolumeLabel, setLeftVolumeLabel] = useState("5%");
-    const [rightVolumeLabel, setRightVolumeLabel] = useState("5%");    
+    const [leftVolumeLabel, setLeftVolumeLabel] = useState((dt.vod[input_index].volume));
+    const [rightVolumeLabel, setRightVolumeLabel] = useState((dt.vod[input_index].volume));    
     const leftCurrentStream = useRef("");
-    const rightCurrentStream = useRef("");  
+    const rightCurrentStream = useRef("");
     const leftStreamIsAdRef = useRef(false);
     const rightStreamIsAdRef = useRef(false);
     const leftDID = useRef("");
     const rightDID = useRef("");
+    const [rndDid, setRndDid] = useState(false);
     const [leftStreamIsAd, setleftStreamIsAd] = useState(false);  
     const [rightStreamIsAd, setrightStreamIsAd] = useState(false);
     const [leftTrackingEvents, setLeftTrackingEvents] = useState([]);
@@ -126,7 +128,6 @@ const Vod = ({input_index}) => {
         thirdQuartile: '',
         completion: ''
     });
-    const _INTERVAL_ = 1000;
 
 
     useEffect(() => {
@@ -484,8 +485,6 @@ const Vod = ({input_index}) => {
 
     const checkIfAd = (mpd, activeStreamId) => {
 
-        //console.log("mpd: ", mpd);
-        
         let ret = false;
         let events = [];
         
@@ -529,13 +528,20 @@ const Vod = ({input_index}) => {
         let did= '';
 
         if (pl === 'l'){
-            if (leftDID.current === ''){
+            // always refresh when rnd.did = true
+            if (rndDid) {
+                leftDID.current = generateUUID();           
+            } else if (leftDID.current === ''){
                 leftDID.current = generateUUID();
             }
             did = leftDID.current;
+            //console.log(`leftdid: ${did}`);
         }
         else {
-            if (rightDID.current === ''){
+            // always refresh when rnd.did = true
+            if (rndDid) {
+                rightDID.current = generateUUID();
+            } else if (rightDID.current === ''){
                 rightDID.current = generateUUID();
             }
             did = rightDID.current;
@@ -801,26 +807,28 @@ const Vod = ({input_index}) => {
     
     const handleToggleLeftVolume = () => {
         if (leftVideoRef.current) {
-            if (leftVolumeLabel === "5%") {
-                leftVideoRef.current.volume = 0.05;
+            if (leftVolumeLabel === (dt.vod[input_index].volume)) {
+                let v = Number(leftVolumeLabel.replace(/[^\d.,-]+/g, '').replace(',', '.')) / 100;
+                leftVideoRef.current.volume = v;
                 leftVideoRef.current.muted = false;
                 setLeftVolumeLabel("0%");
             } else {
                 leftVideoRef.current.volume = 0;
-                setLeftVolumeLabel("5%");
+                setLeftVolumeLabel((dt.vod[input_index].volume));
             }
         }
     };
 
     const handleToggleRightVolume = () => {
         if (rightVideoRef.current) {
-            if (rightVolumeLabel === "5%") {
-                rightVideoRef.current.volume = 0.05;
+            if (rightVolumeLabel === (dt.vod[input_index].volume)) {
+                let v = Number(rightVolumeLabel.replace(/[^\d.,-]+/g, '').replace(',', '.')) / 100;
+                rightVideoRef.current.volume = v;
                 rightVideoRef.current.muted = false;
                 setRightVolumeLabel("0%");
             } else {
                 rightVideoRef.current.volume = 0;
-                setRightVolumeLabel("5%");
+                setRightVolumeLabel((dt.vod[input_index].volume));
             }
         }
     };
@@ -988,6 +996,17 @@ const Vod = ({input_index}) => {
                     </button>
                     <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" onClick={handleSkipToPostroll}>
                         Skip
+                    </button>
+                    <button
+                        onClick={() => setRndDid(v => !v)}
+                        className={
+                            rndDid
+                            ? "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition shadow"
+                            : "bg-blue-900 text-white px-4 py-2 rounded shadow-inner translate-y-[1px]"
+                        }
+                        title="Toggle random deviceId (applies on next Load/Reload)"
+                    >
+                        rnd.did
                     </button>
                 </div>
             </div>
