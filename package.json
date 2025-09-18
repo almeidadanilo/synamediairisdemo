@@ -21,10 +21,10 @@
   },
   "scripts": {
     "start-chrome": "start chrome --disable-web-security --user-data-dir=\"C:/ChromeDev\" http://localhost:3000",
-    "start": "react-scripts --openssl-legacy-provider start",
+    "start": "cross-env NODE_OPTIONS=--openssl-legacy-provider craco start",
     "build": "react-scripts --openssl-legacy-provider build",
-    "start-iris": "cross-env HOST=irisdemo.com PORT=3000 DANGEROUSLY_DISABLE_HOST_CHECK=true react-scripts start",
-    "test": "react-scripts test",
+    "start-iris": "cross-env HOST=irisdemo.com PORT=3000 DANGEROUSLY_DISABLE_HOST_CHECK=true NODE_OPTIONS=--openssl-legacy-provider craco start",
+    "test": "craco test",
     "eject": "react-scripts eject",
     "start-both": "concurrently \"npm start\" \"wait-on http://localhost:3000 && npm run start-chrome\"",
     "tailwind-init": "tailwindcss init -p"
@@ -48,6 +48,7 @@
     ]
   },
   "devDependencies": {
+    "@craco/craco": "^7.1.0",
     "@tailwindcss/cli": "^4.1.8",
     "autoprefixer": "^10.4.21",
     "concurrently": "^9.0.1",

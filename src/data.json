@@ -105,7 +105,7 @@
             "type":"VOD",
             "postroll_offset": 164,
             "volume": "20%",
-            "menu_title": "Region: SLO/CRO",
+            "menu_title": "Region: Balkans",
             "great_title": "Spot Pre-roll",
             "left_title": "1x Pre-roll",
             "left_segment":"Region: Slovenia",
@@ -405,7 +405,7 @@
         },
         {
             "demo_scene": "22",
-            "active": false,
+            "active": true,
             "type":"LINEAR",
             "postroll_offset": 0,
             "volume": "20%",
@@ -418,14 +418,12 @@
             "right_segment": "Profile: P2 [RJO]",
             "right_flag": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Bandeira_da_cidade_do_Rio_de_Janeiro.svg",
             "max_channels": "0",
-            "special_header": {
-                "Globo-Checksum": "77e79560b8170698b47d2f420af0a3ee"
-            },            
-            "left_playback_url": "http://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/streamweb-live.clarocdn.com.br/Content/Channel/DAI02/dsc2/manifest.mpd?channelId=204&hhid=sub_100067&PAID=ads1&daiEnabled=true",
+            "special_header": {},            
+            "left_playback_url": "http://linear-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/d270ul7trkm76m.cloudfront.net/Content/Channel/DAI02/dss4/manifest.mpd?channelId=204&hhid=sub_100067&PAID=ads1&daiEnabled=true&kvp=country~BRA&kvp=adForm~video&kvp=profile~p1,p2",
             "left_playback_url_1": "",
             "left_playback_url_2": "",
             "left_ads_url": "",
-            "right_playback_url": "",
+            "right_playback_url": "https://d270ul7trkm76m.cloudfront.net/Content/Channel/DAI02/dss4/manifest.mpd",
             "right_playback_url_1": "",
             "right_playback_url_2": "",
             "right_ads_url": ""

@@ -1,15 +1,17 @@
 import random
 import json
 import datetime
-import requests
-import cv2
 import os
-import pygame
-import pyautogui
-import tkinter as tk
-import paho.mqtt.client as mqtt
-from tkinter import ttk
-from PIL import Image, ImageTk
+import requests                             # for signaling the ESAM message to vDCM/MEG
+import cv2                                  # for webcam image capture
+import pygame                               # for playing sounds
+import pyautogui                            # for the screenshot (teams demo)
+import tkinter as tk                        # for Python UI
+import paho.mqtt.client as mqtt             # for MQTT Connection to DAI POI demo
+import asyncio, websockets                  # for Intercommunication with Linear.js
+import threading                            # for Intercommunication with Linear.js (websocket thread)
+from tkinter import ttk                     # for Python UI - Multi TAB control
+from PIL import Image, ImageTk              # for loading wheel of fortune image and animate its spin
 
 
 # Load transparent wheel image
@@ -128,6 +130,73 @@ result_label_manual.pack(pady=10)
 # Globals for MQ-TT
 mqtt_client = None
 mqtt_connected = False
+
+# Websocket globals
+CLIENTS = set()
+WS_LOOP = None      # asyncio loop that runs the websocket server
+WS_SERVER = None
+WS_STOP = None
+
+######################################################################################################
+# Handler for websocket connection (intercommunication with Linear.js)
+######################################################################################################
+async def handler(ws):
+    CLIENTS.add(ws)
+    try:
+        # run until disconnected
+        await asyncio.Future()  
+    finally:
+        CLIENTS.discard(ws)
+
+######################################################################################################
+# Handler for sending the websocket signal (intercommunication with Linear.js)
+######################################################################################################
+async def broadcast_special(flag: bool = True):
+    # To be called when spinning wheel lands on 'special'.
+    if not CLIENTS:
+        return
+    msg = json.dumps({"special": bool(flag)})
+    await asyncio.gather(*[c.send(msg) for c in list(CLIENTS)])
+
+######################################################################################################
+# --- WS server: run inside an actual running loop in a background thread ---
+######################################################################################################
+async def ws_main():
+    global WS_LOOP, WS_STOP
+    WS_LOOP = asyncio.get_running_loop()
+    WS_STOP = asyncio.Event()
+    async with websockets.serve(handler, "127.0.0.1", 8765):
+        print("WS listening on ws://127.0.0.1:8765")
+        await WS_STOP.wait()  # wait until we’re told to stop
+    print("WS server closed.")
+
+######################################################################################################
+# Start the websocket component in a new thread
+######################################################################################################
+def start_ws_server():
+    def _runner():
+        try:
+            asyncio.run(ws_main())
+        except Exception as e:
+            # don’t kill the app silently if WS crashes
+            print(f"WS server crashed: {e}")
+    threading.Thread(target=_runner, daemon=True).start()
+
+######################################################################################################
+# Stop the websocket component
+######################################################################################################
+def stop_ws_server():
+    # Trigger the event from the Tk/main thread
+    if WS_LOOP and WS_STOP:
+        WS_LOOP.call_soon_threadsafe(WS_STOP.set)
+
+######################################################################################################
+# Send the signal from the main thread to the websocket specific thread
+######################################################################################################
+def notify_special(flag: bool = True):
+    # Schedule the coroutine on the WS server event loop from Tkinter thread
+    if WS_LOOP and not WS_LOOP.is_closed():
+        asyncio.run_coroutine_threadsafe(broadcast_special(flag), WS_LOOP)
 
 ######################################################################################################
 # Connectto MQ-TT
@@ -540,6 +609,7 @@ def start_countdown_and_capture():
                 capture_special_photo()
             else:
                 capture_screenshot_special()
+            notify_special(True)                    #sends the signal to Linear.js
     
     update_count(0)
 
@@ -585,7 +655,7 @@ def spin_wheel():
     result_label.config(text=f"🎯 Result: {result}", fg="green" if result != "Special" else "purple")
     
     #result = "SPECIAL"
-    if result in ["75", "90", "120"]:
+    if result in ["60", "75", "90", "120"]:
         result = "SPECIAL"
 
     if result == "SPECIAL":
@@ -752,8 +822,10 @@ def on_app_close():
         mqtt_disconnect()
     except:
         pass
+    stop_ws_server()
     root.destroy()
 
 root.protocol("WM_DELETE_WINDOW", on_app_close)
 
+start_ws_server()
 root.mainloop()

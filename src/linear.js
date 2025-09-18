@@ -91,8 +91,6 @@ const Linear = ({input_index}) => {
     const rightPlayer = useRef(null);
     const leftCTEnabledRef = useRef(false);
     const rightCTEnabledRef = useRef(false);    
-    //const leftPrevPeriodWasAd = useRef(false);
-    //const rightPrevPeriodWasAd = useRef(false);
     const [leftUrl, setLeftUrl] = useState((dt.vod[input_index].left_playback_url));
     const [rightUrl, setRightUrl] = useState((dt.vod[input_index].right_playback_url));
     const [leftVolumeLabel, setLeftVolumeLabel] = useState((dt.vod[input_index].volume));
@@ -102,7 +100,10 @@ const Linear = ({input_index}) => {
     const leftStreamIsAdRef = useRef(false);
     const rightStreamIsAdRef = useRef(false);
     const leftDID = useRef("");
-    const rightDID = useRef("");    
+    const rightDID = useRef("");
+    const isSpecial = useRef(false);
+    const [latestImage, setLatestImage] = useState(null);
+    const [showSpecialLeft,  setShowSpecialLeft]  = useState(false);
     const [leftStreamIsAd, setleftStreamIsAd] = useState(false);  
     const [rightStreamIsAd, setrightStreamIsAd] = useState(false);
     const [leftTrackingEvents, setLeftTrackingEvents] = useState([]);
@@ -213,6 +214,24 @@ const Linear = ({input_index}) => {
         }
     }, [rightTrackingEvents, rightStreamIsAd, rightCurrentStream.current]);
       
+    // Handler for the intercomm websocket Iris_WOF.py -> Linear.js
+    useEffect(() => {
+        const ws = new WebSocket('ws://127.0.0.1:8765');
+        ws.onmessage = (evt) => {
+            try {
+                const msg = JSON.parse(evt.data);
+                if (msg.special === true) {
+                    isSpecial.current = true;
+                    console.log("Received isSpecial signal from IrisWOF.");
+                    //setTimeout(() => { isSpecial.current = false; }, 10000); // or however long you want
+                }
+            } catch (error) {
+                console.error('Error Handling WebSocket:', error);
+            }
+        };
+        return () => ws.close();
+    }, []);
+
     function applyRequestHeaders(player, headers) {
         if (!headers) return;
         const mod = {
@@ -388,11 +407,26 @@ const Linear = ({input_index}) => {
                     const hasCT = result.events.some(ev => ev.type === 'clicktrough' && ev.ct);
                     //console.log("Left Player HasCT: ", hasCT);
                     leftCTEnabledRef.current = hasCT;
+                    if (isSpecial.current) {
+                        setShowSpecialLeft(true);
+                        // load the latest image captured
+                        fetch('./specials/index.json')
+                            .then(res => res.json())
+                            .then(files => {
+                            const latest = files
+                                .filter(f => f.endsWith('.jpg'))
+                                .sort()
+                                .reverse()[0]; // latest alphabetically
+                            setLatestImage(`./specials/${latest}`);
+                        });
+                        isSpecial.current = false;
+                    }                    
                     forceUpdate(n => n + 1);
                 } else {
                     setLeftTrackingEvents([]);
                     setleftStreamIsAd(false);
                     resetTrackingLabels('l');
+                    setShowSpecialLeft(false);
                     leftCTEnabledRef.current = false;
                 }                
             });
@@ -952,33 +986,44 @@ const Linear = ({input_index}) => {
                         />
                         <div>
                             <AdEventPanel labels={leftTrackingLabels} />
-                            {/*
-                            <table className="w-full text-sm text-left text-gray-700 border border-gray-200">
-                                <thead className="text-xs uppercase bg-gray-50 text-gray-500">
-                                    <tr>
-                                        <th scope="col" className="px-6 py-3">Impression</th>
-                                        <th scope="col" className="px-6 py-3">AdStart</th>
-                                        <th scope="col" className="px-6 py-3">25%</th>
-                                        <th scope="col" className="px-6 py-3">50%</th>
-                                        <th scope="col" className="px-6 py-3">75%</th>
-                                        <th scope="col" className="px-6 py-3">AdCompl.</th>
-                                    </tr>                                
-                                </thead>
-                                <tbody>
-                                    <tr className="hover:bg-gray-100">
-                                        <td className="px-6 py-4">{leftTrackingLabels.impression === '' ? '-' : leftTrackingLabels.impression}</td>
-                                        <td className="px-6 py-4">{leftTrackingLabels.adstart === '' ? '-' : leftTrackingLabels.adstart}</td>
-                                        <td className="px-6 py-4">{leftTrackingLabels.firstQuartile === '' ? '-' : leftTrackingLabels.firstQuartile}</td>
-                                        <td className="px-6 py-4">{leftTrackingLabels.secondQuartile === '' ? '-' : leftTrackingLabels.secondQuartile}</td>
-                                        <td className="px-6 py-4">{leftTrackingLabels.thirdQuartile === '' ? '-' : leftTrackingLabels.thirdQuartile}</td>
-                                        <td className="px-6 py-4">{leftTrackingLabels.completion === '' ? '-' : leftTrackingLabels.completion}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            */}
                         </div>                     
-                        <div> 
-                        <video ref={leftVideoRef} controls style={{ width: '750px' }} />
+                        <div className="relative inline-block overflow-hidden" style={{ width: '750px', aspectRatio: '16 / 9' }} > 
+                            <video ref={leftVideoRef} controls style={{ width: '100%', height: '100%', display: 'block' }} />
+                            {showSpecialLeft && (
+                                <div
+                                    aria-hidden
+                                    style={{
+                                        position: 'absolute',
+                                        inset: 0,
+                                        zIndex: 12,
+                                        pointerEvents: 'none',
+                                        // keep only the top-left triangle of the overlay
+                                        clipPath: 'polygon(0 0, 100% 0, 0 100%)',
+                                        // fade: solid near A (top-left) → transparent toward B–C (diagonal)
+                                        background:
+                                            'linear-gradient(135deg,' +
+                                            'rgba(0,0,0,0.92) 0%,' +
+                                            'rgba(0,0,0,0.85) 25%,' +
+                                            'rgba(0,0,0,0.00) 60%)',
+                                    }}
+                                >
+                                    <img
+                                        src={latestImage}
+                                        alt="Latest Special"
+                                        style={{
+                                            position: 'absolute',
+                                            top: '15px',      // distance from top edge
+                                            left: '15px',     // distance from left edge
+                                            width: '280px',    // force square dimensions
+                                            height: '220px',
+                                            objectFit: 'cover',
+                                            borderRadius: '6px',
+                                            boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
+                                            filter: 'brightness(1.0) contrast(1.0)',
+                                        }}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
                     <div>
