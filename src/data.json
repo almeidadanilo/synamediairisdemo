@@ -367,9 +367,7 @@
             "right_segment": "Profile: P2 [RJO]",
             "right_flag": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Bandeira_da_cidade_do_Rio_de_Janeiro.svg",
             "max_channels": "0",
-            "special_header": {
-                "Globo-Checksum": "77e79560b8170698b47d2f420af0a3ee"
-            },
+            "special_header": {},
             "left_playback_url": "http://vod-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/voslab.live.nowonline.com.br/Content/dsc7/VOD/15849/1498/7fc35a83-38bb-4564-9509-ea386b90923d/c039d313-474b-1e6c-6396-558c9f7b0017/manifest.mpd?PID=dai.com&optin=true&daiEnabled=true&kvp=country~BRA&kvp=adForm~video&kvp=profile~p1",
             "left_playback_url_1": "",
             "left_playback_url_2": "",
