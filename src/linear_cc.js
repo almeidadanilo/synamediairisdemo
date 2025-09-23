@@ -4,6 +4,8 @@ import axios from 'axios';
 import dt from './data.json';
 import mqtt from 'mqtt';
 
+const FULL_PLAYER_WIDTH = 750;          // in pixels
+const SHRUNK_PLAYER_WIDTH = 350;        // in pixels
 
 const CheckIcon = () => (
   <svg viewBox="0 0 24 24" className="w-6 h-6">
@@ -133,6 +135,8 @@ const LinearCC = ({input_index}) => {
     const [shrinkPlayersLeft, setShrinkPlayersLeft] = useState(false);
     const [shrinkPlayersRight, setShrinkPlayersRight] = useState(false);
     const [isDisplaySelected, setIsDisplaySelected] = useState(true);
+    const [displayShape, setDisplayShape] = useState(0);                    // 0: side-by-side | 1: L-Shape | 2: Inverted L-Shape | 3: O-Shape
+    const displayShapeRef = useRef(0);
     const [leftTrackingLabels, setLeftTrackingLabels] = useState({
       impression: '',
       adstart: '',
@@ -152,9 +156,7 @@ const LinearCC = ({input_index}) => {
     const _INTERVAL_ = 1000;
     const holdThreshold = 1000;                 // milliseconds
     const __SHRINK_ANNIMATION__= 10000;         // miliseconds
-    //let leftClickHoldTimer = null;
     let leftClickStartTime = null;
-    //let rightClickHoldTimer = null;
     let rightClickStartTime = null;
 
     useEffect(() => {
@@ -395,7 +397,6 @@ const LinearCC = ({input_index}) => {
             leftPlayer.current.on(dashjs.MediaPlayer.events.PERIOD_SWITCH_STARTED, (e) => {
 
             });
-
             leftPlayer.current.on(dashjs.MediaPlayer.events.STREAM_ACTIVATED, (e) => {
                 ////////////////////////////////////////////////////////////////////////////
                 const newId = e.streamInfo?.id;
@@ -444,7 +445,6 @@ const LinearCC = ({input_index}) => {
             rightPlayer.current.on(dashjs.MediaPlayer.events.PERIOD_SWITCH_STARTED, (e) => {
 
             });
-
             rightPlayer.current.on(dashjs.MediaPlayer.events.STREAM_ACTIVATED, (e) => {
                 //////////////////////////////////////////////////////////////////////////////
                 const newId = e.streamInfo?.id;
@@ -941,15 +941,32 @@ const LinearCC = ({input_index}) => {
             // --------------------------------------
             const impressions = xmlDoc.getElementsByTagName("Impression");
             const advertisers = xmlDoc.getElementsByTagName("Advertiser");
+            let myURL = '';
             // Get the image from the impression --------------------------------------
             for (let i=0; i < impressions.length; i++) {
                 const impUrl = impressions[i].textContent.trim();
-                if (impUrl.includes('.jpeg') || impUrl.includes('.jpg') || impUrl.includes('.png')) {  
-                    if (pos === 'l') {
-                        leftDisplayImage.current = impUrl;
-                    }
-                    else {
-                        rightDisplayImage.current = impUrl;
+                if (impUrl.includes('.jpeg') || impUrl.includes('.jpg') || impUrl.includes('.png')) {
+                    switch (displayShapeRef.current){
+                        case 0:         // Side-by-Side
+                            if (impUrl.includes('format=S')) {
+                                myURL = impUrl;
+                            }
+                            break;
+                        case 1:         // L-Shape
+                            if (impUrl.includes('format=L')) {
+                                myURL = impUrl;
+                            }
+                            break;
+                        case 2:         // Inverted L-Shape
+                            if (impUrl.includes('format=IL')) {
+                                myURL = impUrl;
+                            }
+                            break;
+                        case 3:         // O-Shape
+                            if (impUrl.includes('format=O')) {
+                                myURL = impUrl;
+                            }
+                            break;
                     }
                 } 
                 else if (impUrl.includes('/vod/impression?')) {
@@ -960,7 +977,14 @@ const LinearCC = ({input_index}) => {
                         rightDisplayImpression.current = impUrl;
                     }
                 }
+            } // endfor
+            console.log(`displayShape: ${displayShapeRef.current}, myURL: ${myURL}`);
+            if (pos === 'l') {
+                leftDisplayImage.current = myURL;
             }
+            else {
+                rightDisplayImage.current = myURL;
+            }  
             // Get advertiser
             const advElements = xmlDoc.getElementsByTagName("Advertiser");
             if (advElements.length > 0) {
@@ -1013,14 +1037,19 @@ const LinearCC = ({input_index}) => {
                 switch (ev) {
                     case "start":
                         pts_ = 0;
+                        break;
                     case "firstQuartile":
                         pts_ = timeStringToMilliseconds(durationText) * 0.25;
+                        break;
                     case "midpoint":
                         pts_ = timeStringToMilliseconds(durationText) * 0.50;
+                        break;
                     case "thirdQuartile":
                         pts_ = timeStringToMilliseconds(durationText) * 0.75;
+                        break;
                     case "complete":
                         pts_ = timeStringToMilliseconds(durationText);
+                        break;
                 }
                 e = {event: ev, pts: pts_, url: trackers[i].textContent.trim(), reported: false}
                 if (pos === 'l') {leftCCTrackingEvents.current.push(e);} else {rightCCTrackingEvents.current.push(e);}      
@@ -1134,6 +1163,7 @@ const LinearCC = ({input_index}) => {
             }
             let url = overwriteURL === '' ? leftDisplayAdURL.current : overwriteURL;
             //let url = buildURL(dt.vod[input_index].left_display_ads_url, 'l');
+            console.log(`AdDecision: ${url}`);
             let vast = await getVast(url);
 
             if (processDisplayVast(vast, 'l')){
@@ -1200,13 +1230,23 @@ const LinearCC = ({input_index}) => {
                         <div>
                             <AdEventPanel labels={leftTrackingLabels} />
                         </div>     
-                        <div className="w-[750px] h-[420px] flex items-center justify-start bg-black overflow-hidden">
+                        <div className={
+                                (displayShapeRef.current === 1 && shrinkPlayersLeft)
+                                ? "w-[750px] h-[420px] relative flex items-start justify-start bg-black overflow-hidden"
+                                : "w-[750px] h-[420px] relative flex items-center justify-start bg-black overflow-hidden"
+                        }>
                             {/* Left video */}
                             <div
-                                className="h-full flex items-center justify-center"
+                                className={
+                                    (displayShapeRef.current === 1 && shrinkPlayersLeft)
+                                        ? "h-full flex items-start justify-start"
+                                        : "h-full flex items-center justify-center"
+                                }
                                 style={{
-                                width: shrinkPlayersLeft ? '350px' : '750px',
-                                transition: 'width 0.5s ease-in-out'
+                                    width: (displayShapeRef.current && shrinkPlayersLeft) === 1
+                                        ? `${Math.round(FULL_PLAYER_WIDTH * 0.75)}px`
+                                        : (shrinkPlayersLeft ? `${SHRUNK_PLAYER_WIDTH}px` : `${FULL_PLAYER_WIDTH}px`),
+                                    transition: 'width 0.5s ease-in-out'
                                 }}
                             >
                                 <video
@@ -1218,16 +1258,26 @@ const LinearCC = ({input_index}) => {
                             </div>
                             {/* Display Ad - only during shrink */}
                             {shrinkPlayersLeft && showLeftDisplayImage && (
-                                <div
-                                    className="h-full flex items-center justify-center ml-2"
-                                    style={{ width: 'calc(750px - 350px - 8px)' }} // 8px = approx. Tailwind ml-2
-                                >
-                                <img
-                                    src={leftDisplayImage.current}
-                                    alt="Display Ad"
-                                    className="h-full object-contain"
-                                />
-                                </div>
+                                (displayShapeRef.current === 1)
+                                    ? (
+                                        <img
+                                            src={leftDisplayImage.current}
+                                            alt="Display Ad"
+                                            className="absolute inset-0 w-full h-full object-fill"
+                                            style={{ zIndex: 1 }}
+                                        />
+                                    ) : (
+                                        <div
+                                            className="h-full flex items-center justify-center ml-2"
+                                            style={{ width: `${SHRUNK_PLAYER_WIDTH}px`, height: '203px' }} // 8px = approx. Tailwind ml-2
+                                        >
+                                            <img
+                                                src={leftDisplayImage.current}
+                                                alt="Display Ad"
+                                                className="w-full h-full object-fill" 
+                                            />
+                                        </div>
+                                    )
                             )}
                         </div>
                     </div>
@@ -1242,13 +1292,23 @@ const LinearCC = ({input_index}) => {
                         <div>
                             <AdEventPanel labels={rightTrackingLabels} />
                         </div>                    
-                        <div className="w-[750px] h-[420px] flex items-center justify-start bg-black overflow-hidden">
+                        <div className={
+                            (displayShapeRef.current === 1 && shrinkPlayersRight)
+                                ? "w-[750px] h-[420px] relative flex items-start justify-start bg-black overflow-hidden"
+                                : "w-[750px] h-[420px] relative flex items-center justify-start bg-black overflow-hidden"
+                        }>
                             {/* Right video */}
                             <div
-                                className="h-full flex items-center justify-center"
+                                className={
+                                    (displayShapeRef.current === 1 && shrinkPlayersRight)
+                                        ? "h-full flex items-start justify-start"
+                                        : "h-full flex items-center justify-center"
+                                }
                                 style={{
-                                width: shrinkPlayersRight ? '350px' : '750px',
-                                transition: 'width 0.5s ease-in-out'
+                                    width: (displayShapeRef.current && shrinkPlayersRight) === 1
+                                        ? `${Math.round(FULL_PLAYER_WIDTH * 0.75)}px`
+                                        : (shrinkPlayersRight ? `${SHRUNK_PLAYER_WIDTH}px` : `${FULL_PLAYER_WIDTH}px`),
+                                    transition: 'width 0.5s ease-in-out'
                                 }}
                             >
                                 <video
@@ -1260,16 +1320,26 @@ const LinearCC = ({input_index}) => {
                             </div>
                             {/* Display Ad - only during shrink */}
                             {shrinkPlayersRight && showRightDisplayImage && (
-                                <div
-                                    className="h-full flex items-center justify-center ml-2"
-                                    style={{ width: 'calc(750px - 350px - 8px)' }} // 8px = approx. Tailwind ml-2
-                                >
-                                <img
-                                    src={rightDisplayImage.current}
-                                    alt="Display Ad"
-                                    className="h-full object-contain"
-                                />
-                                </div>
+                                (displayShapeRef.current === 1)
+                                    ? (
+                                        <img
+                                            src={rightDisplayImage.current}
+                                            alt="Display Ad"
+                                            className="absolute inset-0 w-full h-full object-fill"
+                                            style={{ zIndex: 1 }}
+                                        />
+                                    ) : (
+                                        <div
+                                            className="h-full flex items-center justify-center ml-2"
+                                            style={{ width: `${SHRUNK_PLAYER_WIDTH}px`, height: '203px' }} // 8px = approx. Tailwind ml-2
+                                        >
+                                            <img                            
+                                                src={rightDisplayImage.current}
+                                                alt="Display Ad"
+                                                className="w-full h-full object-fill" 
+                                            />
+                                        </div>
+                                    )
                             )}
                         </div>
                     </div>
@@ -1326,7 +1396,43 @@ const LinearCC = ({input_index}) => {
                     >
                         Video
                     </button>
-                 
+                    <br />
+                    <button
+                        onClick={() => {
+                            setDisplayShape(0);
+                            displayShapeRef.current = 0;
+                        }}
+                        className={`px-4 py-2 rounded-full text-white ${displayShape === 0 ? 'bg-green-600' : 'bg-gray-400'}`}
+                    >
+                        Side-by-Side
+                    </button>
+                    <button
+                        onClick={() => {
+                            setDisplayShape(1);
+                            displayShapeRef.current = 1;
+                        }}
+                        className={`px-4 py-2 rounded-full text-white ${displayShape === 1 ? 'bg-green-600' : 'bg-gray-400'}`}
+                    >
+                        L-Shape
+                    </button>
+                    <button
+                        onClick={() => {
+                            setDisplayShape(2);
+                            displayShapeRef.current = 2;
+                        }}
+                        className={`px-4 py-2 rounded-full text-white ${displayShape === 2 ? 'bg-green-600' : 'bg-gray-400'}`}
+                    >
+                        Inv. L-Shape
+                    </button>
+                    <button
+                        onClick={() => {
+                            setDisplayShape(3);
+                            displayShapeRef.current = 3;
+                        }}
+                        className={`px-4 py-2 rounded-full text-white ${displayShape === 3 ? 'bg-green-600' : 'bg-gray-400'}`}
+                    >
+                        O-Shape
+                    </button>                    
                 </div>
             </div>
         </div>

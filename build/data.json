@@ -1,0 +1,12 @@
+{
+    "vod": {
+        "demo_scene": "1",
+        "great_title": "Spot Pre-roll + Spot Mid-roll",
+        "left_title": "1x30s Pre-Roll, 1x30s Mid-roll",
+        "left_segment":"Home Cooking",
+        "right_title": "1x30s Pre-Roll, 1x30s Mid-roll",
+        "right_segment": "Luxury Travel",
+        "left_playback_url": "https://vod-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/vod.infiniteplatform.tv/vod-clear/ElephantsDream/default.mpd?PID=dai.com&PAID=GLDB1200015072990000&deviceIdType=%5BdevIdType%5D&deviceId=88a290f8b4f59e62438c039b3ea17c81&appId=%5BappId%5D&appName=%5BappName%5D&devModel=%5BdevModel%5D&playerWidth=%5BplayerWidth%5D&playerHeight=%5BplayerHeight%5D&sessionId=abr-vod-8bfbf64c-7855-4216-9c08-87bf2d664660&optin=true&externalPackageId=GLDB1000015072990000&parentalRating=PG-13&playedPosition=00%3A00%3A00&hhid=efc1a6c51e2e2ec8e6bf592cf142d313&kvp=lang%7Eeng&kvp=genre%7EScience+fiction%2CAnimated&kvp=contentId%7EGLDB1200015072990001&kvp=provider%7Edai.com&kvp=parentalRating%7EPG-13&daiEnabled=true",
+        "right_playback_url": "https://vod-dai-ott-ap.ssai.iris.synamedia.com/tenant/op7z4geq/vod.infiniteplatform.tv/vod-clear/ElephantsDream/default.mpd?PID=dai.com&PAID=GLDB1200015072990000&deviceIdType=%5BdevIdType%5D&deviceId=88a290f8b4f59e62438c039b3ea17c81&appId=%5BappId%5D&appName=%5BappName%5D&devModel=%5BdevModel%5D&playerWidth=%5BplayerWidth%5D&playerHeight=%5BplayerHeight%5D&sessionId=abr-vod-8bfbf64c-7855-4216-9c08-87bf2d664665&optin=true&externalPackageId=GLDB1000015072990000&parentalRating=PG-13&playedPosition=00%3A00%3A00&hhid=36dd0152fe26c99c8555a55db1bc358f&kvp=lang%7Eeng&kvp=genre%7EScience+fiction%2CAnimated&kvp=contentId%7EGLDB1200015072990001&kvp=provider%7Edai.com&kvp=parentalRating%7EPG-13&daiEnabled=true"
+    }
+}

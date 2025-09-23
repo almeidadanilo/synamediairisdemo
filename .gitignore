@@ -6,6 +6,7 @@
 /cors-proxy/node_modules
 /public/specials
 /IrisWOF/build/*
+/IrisWOF/dist/*
 /.pnp
 .pnp.js
 
@@ -13,7 +14,6 @@
 /coverage
 
 # production
-/build
 
 # misc
 .DS_Store
@@ -35,6 +35,7 @@ package-lock.json
 /cors-proxy/*.*
 /others/demotnscripts/crypto/build/*
 /reference_UI_design/*
+/build/specials/*.jpg
 *.exe
 *.jsonl
 *.key

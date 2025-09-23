@@ -91,6 +91,46 @@ Will open in a new browser tab the NAB/IBC Iris demo of agentic AI.
 | `LINEARCC`   | `/linearcc{n}`    | `LinearCC`     | Enables MQTT client for closed-caption/companion interactions                 |
 | `SPECIALS`   | `/specials{n}`    | `Specials`     | Reads pause/overlay flags (`inAdPause`, `inAdPauseVideo`, `inAdOverlay`)      |
 
+##### To run the /build directory
+
+## General directory organization:
+
+It should be organized as:
+
+_YOUR_PATH_TO_BUILD_DIRECTORY_\build    >> add the webpage build files here
+_YOUR_PATH_TO_BUILD_DIRECTORY_\IrisWOF  >> add the python script 'wheel of fortune' here
+
+## Iris Demo Web Application
+Install Node
+Install serve -> npm install -g serve
+Edit the hosts file in 'Windows\System32\drivers\etc'
+    >> add 127.0.0.1	irisdemo.com
+
+To run:
+Recommendation to build this 'IrisDemo.bat' file in the desktop:
+
+    @echo off
+    REM Step 1: Start React build server in a new command window
+    start "" cmd /k serve -s "[_YOUR_PATH_TO_BUILD_DIRECTORY_]\build" -l 3000
+    REM Step 2: Wait 5 seconds to allow the server to start
+    timeout /t 5 /nobreak > nul
+    REM Step 3: Launch Chrome 
+    start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" --user-data-dir="C:\ChromeDev" http://irisdemo.com:3000
+
+## Iris Wheel of Fortune (WOF)
+Install python 
+Install the script depedencies
+    >> pip install requests opencv-python pygame pyautogui paho-mqtt websockets pillow
+    If running on Linux machines, there is a chance that tk is not installed by default, so, run: 'sudo apt-get install python3-tk' as well
+
+To run:
+Recommendation to build this 'IrisWOF.bat' file in the desktop:
+
+    @echo off
+    cd /d "[_YOUR_PATH_TO_BUILD_DIRECTORY_]\IrisWOF"
+    python iris_wof.py
+    pause
+
 
 ##### NPM session
 

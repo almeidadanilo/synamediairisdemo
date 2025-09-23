@@ -1012,9 +1012,9 @@ const Linear = ({input_index}) => {
                                         alt="Latest Special"
                                         style={{
                                             position: 'absolute',
-                                            top: '15px',      // distance from top edge
-                                            left: '15px',     // distance from left edge
-                                            width: '280px',    // force square dimensions
+                                            top: '15px',            // distance from top edge
+                                            left: '15px',           // distance from left edge
+                                            width: '280px',         // force square dimensions
                                             height: '220px',
                                             objectFit: 'cover',
                                             borderRadius: '6px',
@@ -1037,8 +1037,8 @@ const Linear = ({input_index}) => {
                         <div>
                             <AdEventPanel labels={rightTrackingLabels} />
                         </div>                    
-                        <div>
-                        <video ref={rightVideoRef} controls style={{ width: '750px' }} />
+                        <div className="relative inline-block overflow-hidden" style={{ width: '750px', aspectRatio: '16 / 9' }} >
+                            <video ref={rightVideoRef} controls style={{ width: '100%', height: '100%', display: 'block' }} />
                         </div>
                     </div>
                 </div>
